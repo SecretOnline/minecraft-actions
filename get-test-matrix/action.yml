@@ -1,0 +1,155 @@
+name: Get test matrix
+description: >-
+  Builds a test matrix of Minecraft versions and their Java versions.
+  For snapshots/pre-releases, returns only the current version.
+  For releases, finds all release versions matching the minecraft_version_range from gradle.properties.
+
+inputs:
+  user-agent:
+    description: User-Agent string for HTTP requests.
+    required: true
+  gradle-properties:
+    description: Path to the gradle.properties file.
+    required: false
+    default: gradle.properties
+
+outputs:
+  test-matrix:
+    description: >-
+      JSON array of objects with "name", "minecraft-version", and "java-version" fields,
+      suitable for use in a GitHub Actions matrix strategy.
+    value: ${{ steps.matrix.outputs.test-matrix }}
+
+runs:
+  using: composite
+  steps:
+    - name: Build test matrix
+      id: matrix
+      shell: bash
+      env:
+        USER_AGENT: ${{ inputs.user-agent }}
+        GRADLE_PROPERTIES: ${{ inputs.gradle-properties }}
+      run: |
+        set -euo pipefail
+
+        MC_VERSION=$(grep '^minecraft_version=' "$GRADLE_PROPERTIES" | cut -d= -f2)
+        MC_VERSION_RANGE=$(grep '^minecraft_version_range=' "$GRADLE_PROPERTIES" | cut -d= -f2)
+
+        MANIFEST=$(curl -sf -H "User-Agent: $USER_AGENT" https://piston-meta.mojang.com/mc/game/version_manifest_v2.json)
+
+        # get_java_version <mc_version>: fetches the Java major version for a Minecraft version
+        get_java_version() {
+          local version_url
+          version_url=$(echo "$MANIFEST" | jq -r --arg v "$1" '.versions[] | select(.id == $v) | .url')
+          curl -sf -H "User-Agent: $USER_AGENT" "$version_url" | jq -r '.javaVersion.majorVersion'
+        }
+
+        # version_gte <a> <b>: returns success if a >= b
+        version_gte() {
+          [[ "$(printf '%s\n%s' "$1" "$2" | sort -V | head -1)" == "$2" ]]
+        }
+
+        # version_gt <a> <b>: returns success if a > b
+        version_gt() {
+          [[ "$1" != "$2" ]] && version_gte "$1" "$2"
+        }
+
+        # For snapshots/pre-releases, just test the single version
+        if [[ "$MC_VERSION" =~ -(snapshot|pre|rc) ]]; then
+          echo "Snapshot/pre-release detected, testing only $MC_VERSION"
+          JAVA_VERSION=$(get_java_version "$MC_VERSION")
+          MATRIX=$(jq -n --arg name "$MC_VERSION" --arg mc "$MC_VERSION" --arg java "$JAVA_VERSION" \
+            '[{"name": $name, "minecraft-version": $mc, "java-version": $java}]')
+          echo "test-matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        # For releases, parse the Maven version range and find matching release versions
+        echo "Release detected, finding versions matching range $MC_VERSION_RANGE"
+
+        LOWER_BOUND=""
+        UPPER_BOUND=""
+        LOWER_INC="false"
+        UPPER_INC="false"
+
+        # Exact version: [X.Y.Z] or [X.Y]
+        if [[ "$MC_VERSION_RANGE" =~ ^\[([0-9.]+)\]$ ]]; then
+          LOWER_BOUND="${BASH_REMATCH[1]}"
+          UPPER_BOUND="${BASH_REMATCH[1]}"
+          LOWER_INC="true"
+          UPPER_INC="true"
+        # Inclusive lower, open upper: [X.Y,)
+        elif [[ "$MC_VERSION_RANGE" =~ ^\[([0-9.]+),\)$ ]]; then
+          LOWER_BOUND="${BASH_REMATCH[1]}"
+          LOWER_INC="true"
+        # Inclusive lower, exclusive upper: [X.Y,X.Z)
+        elif [[ "$MC_VERSION_RANGE" =~ ^\[([0-9.]+),([0-9.]+)\)$ ]]; then
+          LOWER_BOUND="${BASH_REMATCH[1]}"
+          UPPER_BOUND="${BASH_REMATCH[2]}"
+          LOWER_INC="true"
+        # Inclusive lower, inclusive upper: [X.Y,X.Z]
+        elif [[ "$MC_VERSION_RANGE" =~ ^\[([0-9.]+),([0-9.]+)\]$ ]]; then
+          LOWER_BOUND="${BASH_REMATCH[1]}"
+          UPPER_BOUND="${BASH_REMATCH[2]}"
+          LOWER_INC="true"
+          UPPER_INC="true"
+        else
+          echo "::warning::Could not parse version range $MC_VERSION_RANGE, falling back to minecraft_version"
+          JAVA_VERSION=$(get_java_version "$MC_VERSION")
+          MATRIX=$(jq -n --arg name "$MC_VERSION" --arg mc "$MC_VERSION" --arg java "$JAVA_VERSION" \
+            '[{"name": $name, "minecraft-version": $mc, "java-version": $java}]')
+          echo "test-matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        # Get all release version IDs from the manifest
+        RELEASE_VERSIONS=$(echo "$MANIFEST" | jq -r '[.versions[] | select(.type == "release") | .id] | .[]')
+
+        MATCHING_VERSIONS=()
+        while IFS= read -r version; do
+          # Check lower bound
+          if [[ -n "$LOWER_BOUND" ]]; then
+            if [[ "$LOWER_INC" == "true" ]]; then
+              version_gte "$version" "$LOWER_BOUND" || continue
+            else
+              version_gt "$version" "$LOWER_BOUND" || continue
+            fi
+          fi
+
+          # Check upper bound
+          if [[ -n "$UPPER_BOUND" ]]; then
+            if [[ "$UPPER_INC" == "true" ]]; then
+              version_gte "$UPPER_BOUND" "$version" || continue
+            else
+              version_gt "$UPPER_BOUND" "$version" || continue
+            fi
+          fi
+
+          MATCHING_VERSIONS+=("$version")
+        done <<< "$RELEASE_VERSIONS"
+
+        # Fall back to minecraft_version if no releases match the range
+        if [[ ${#MATCHING_VERSIONS[@]} -eq 0 ]]; then
+          echo "::warning::No release versions found matching range $MC_VERSION_RANGE, falling back to minecraft_version"
+          MATCHING_VERSIONS=("$MC_VERSION")
+        fi
+
+        echo "Found ${#MATCHING_VERSIONS[@]} matching version(s): ${MATCHING_VERSIONS[*]}"
+
+        # Build matrix JSON by fetching Java version for each matching version
+        MATRIX="["
+        FIRST=true
+        for version in "${MATCHING_VERSIONS[@]}"; do
+          JAVA_VERSION=$(get_java_version "$version")
+
+          if [[ "$FIRST" != "true" ]]; then
+            MATRIX+=","
+          fi
+          FIRST=false
+
+          MATRIX+=$(jq -n --arg name "$version" --arg mc "$version" --arg java "$JAVA_VERSION" \
+            '{"name": $name, "minecraft-version": $mc, "java-version": $java}')
+        done
+        MATRIX+="]"
+
+        echo "test-matrix=$MATRIX" >> "$GITHUB_OUTPUT"
