@@ -58,7 +58,7 @@ runs:
         if [[ "$MC_VERSION" =~ -(snapshot|pre|rc) ]]; then
           echo "Snapshot/pre-release detected, testing only $MC_VERSION"
           JAVA_VERSION=$(get_java_version "$MC_VERSION")
-          MATRIX=$(jq -n --arg name "$MC_VERSION" --arg mc "$MC_VERSION" --arg java "$JAVA_VERSION" \
+          MATRIX=$(jq -cn --arg name "$MC_VERSION" --arg mc "$MC_VERSION" --arg java "$JAVA_VERSION" \
             '[{"name": $name, "minecraft-version": $mc, "java-version": $java}]')
           echo "test-matrix=$MATRIX" >> "$GITHUB_OUTPUT"
           exit 0
@@ -96,7 +96,7 @@ runs:
         else
           echo "::warning::Could not parse version range $MC_VERSION_RANGE, falling back to minecraft_version"
           JAVA_VERSION=$(get_java_version "$MC_VERSION")
-          MATRIX=$(jq -n --arg name "$MC_VERSION" --arg mc "$MC_VERSION" --arg java "$JAVA_VERSION" \
+          MATRIX=$(jq -cn --arg name "$MC_VERSION" --arg mc "$MC_VERSION" --arg java "$JAVA_VERSION" \
             '[{"name": $name, "minecraft-version": $mc, "java-version": $java}]')
           echo "test-matrix=$MATRIX" >> "$GITHUB_OUTPUT"
           exit 0
@@ -147,7 +147,7 @@ runs:
           fi
           FIRST=false
 
-          MATRIX+=$(jq -n --arg name "$version" --arg mc "$version" --arg java "$JAVA_VERSION" \
+          MATRIX+=$(jq -cn --arg name "$version" --arg mc "$version" --arg java "$JAVA_VERSION" \
             '{"name": $name, "minecraft-version": $mc, "java-version": $java}')
         done
         MATRIX+="]"
