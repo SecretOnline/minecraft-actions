@@ -1,0 +1,60 @@
+name: Setup Minecraft mod Gradle
+description: >-
+  Sets up Java and Gradle for building Minecraft mods.
+  Ensures the Gradle wrapper is executable, validates it, sets up the correct Java version, and configures Gradle.
+
+inputs:
+  java-version:
+    description: >-
+      Java version to use. If not set, reads java_version from the gradle.properties file.
+    required: false
+  gradle-properties:
+    description: Path to the gradle.properties file.
+    required: false
+    default: gradle.properties
+
+outputs:
+  java-version:
+    description: The Java version that was set up.
+    value: ${{ steps.resolve-java.outputs.java-version }}
+  java-path:
+    description: Path to the Java installation (from setup-java).
+    value: ${{ steps.setup-java.outputs.path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve Java version
+      id: resolve-java
+      shell: bash
+      env:
+        INPUT_JAVA_VERSION: ${{ inputs.java-version }}
+        GRADLE_PROPERTIES: ${{ inputs.gradle-properties }}
+      run: |
+        if [ -n "$INPUT_JAVA_VERSION" ]; then
+          JAVA_VERSION="$INPUT_JAVA_VERSION"
+        else
+          JAVA_VERSION=$(grep '^java_version=' "$GRADLE_PROPERTIES" | cut -d= -f2)
+          if [ -z "$JAVA_VERSION" ]; then
+            echo "::error::Could not find java_version in $GRADLE_PROPERTIES"
+            exit 1
+          fi
+        fi
+        echo "java-version=$JAVA_VERSION" >> "$GITHUB_OUTPUT"
+
+    - name: Ensure Gradle wrapper is executable
+      shell: bash
+      run: chmod +x ./gradlew
+
+    - name: Validate Gradle wrapper
+      uses: gradle/actions/wrapper-validation@v5
+
+    - name: Setup Java ${{ steps.resolve-java.outputs.java-version }}
+      id: setup-java
+      uses: actions/setup-java@v5
+      with:
+        java-version: ${{ steps.resolve-java.outputs.java-version }}
+        distribution: zulu
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v5
