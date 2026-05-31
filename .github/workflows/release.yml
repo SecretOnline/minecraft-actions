@@ -1,0 +1,103 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Semver version (e.g. 1.2.3)"
+        required: true
+        type: string
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ inputs.version }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # Build steps go here when JS actions are added (e.g. npm ci && npm run build)
+
+      - name: Parse changelog
+        id: changelog
+        uses: release-flow/keep-a-changelog-action@v3
+        with:
+          command: query
+          version: v${{ env.VERSION }}
+          changelog: CHANGELOG.md
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create orphaned release commit
+        id: release-commit
+        run: |
+          source_sha=$(git rev-parse HEAD)
+
+          # Discover action directories
+          mapfile -t action_dirs < <(
+            git ls-tree --name-only "$source_sha" \
+              | while IFS= read -r entry; do
+                  if git ls-tree "$source_sha" -- "$entry/action.yml" | grep -q .; then
+                    echo "$entry"
+                  fi
+                done
+          )
+
+          # Stash any built dist/ directories from the working tree before switching branches
+          for dir in "${action_dirs[@]}"; do
+            if [ -d "$dir/dist" ]; then
+              cp -r "$dir/dist" "/tmp/$dir-dist"
+            fi
+          done
+
+          git checkout --orphan release-staging
+          git rm -rf .
+
+          # Restore root README
+          git restore --source="$source_sha" -- README.md
+
+          # Restore each action's files
+          for dir in "${action_dirs[@]}"; do
+            git restore --source="$source_sha" -- "$dir/action.yml"
+            if git ls-tree "$source_sha" -- "$dir/README.md" | grep -q .; then
+              git restore --source="$source_sha" -- "$dir/README.md"
+            fi
+            if [ -d "/tmp/$dir-dist" ]; then
+              cp -r "/tmp/$dir-dist" "$dir/dist"
+            fi
+          done
+
+          git add .
+          git commit -m "Release v$VERSION"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Tag and push
+        run: |
+          full="v$VERSION"
+          minor="v$(echo "$VERSION" | cut -d. -f1-2)"
+          major="v$(echo "$VERSION" | cut -d. -f1)"
+          sha="${{ steps.release-commit.outputs.sha }}"
+
+          git tag -fa "$full"  "$sha" -m "Release $full"
+          git tag -fa "$minor" "$sha" -m "Release $minor"
+          git tag -fa "$major" "$sha" -m "Release $major"
+
+          git push origin "$full" "$minor" "$major" --force
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_NOTES: ${{ steps.changelog.outputs.release-notes }}
+          RELEASE_SHA: ${{ steps.release-commit.outputs.sha }}
+        run: |
+          echo "$RELEASE_NOTES" > /tmp/release-notes.md
+          gh release create "v$VERSION" \
+            --title "v$VERSION" \
+            --target "$RELEASE_SHA" \
+            --notes-file /tmp/release-notes.md \
+            --latest
