@@ -211,6 +211,9 @@ jobs:
           - loader: fabric
             port: 25569
             rconPort: 25579
+          - loader: neoforge
+            port: 25570
+            rconPort: 25580
     steps:
       - uses: actions/checkout@v4
 
@@ -267,6 +270,11 @@ jobs:
         if: matrix.loader == 'fabric'
         run: |
           test -n "${{ steps.setup-client.outputs.fabric-loader-version }}"
+
+      - name: Check setup-mc-client NeoForge outputs
+        if: matrix.loader == 'neoforge'
+        run: |
+          test -n "${{ steps.setup-client.outputs.neoforge-version }}"
 
       - name: Run Minecraft client (join server)
         id: run-client

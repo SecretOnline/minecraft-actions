@@ -68,10 +68,16 @@ async function start(): Promise<void> {
     auth_xuid: "0",
     version_name: config.mcVersion,
     version_type: "release",
+    // "legacy" (rather than "msa") since there's no real Microsoft account behind any
+    // of this - only some MC versions' own game-arg templates reference this at all.
+    user_type: "legacy",
     game_directory: ".",
     assets_root: "assets",
     assets_index_name: config.assetsIndexId,
     natives_directory: config.nativesDirectory,
+    library_directory: "libraries",
+    // Always linux - the only OS these actions run on (see launcherRules.ts).
+    classpath_separator: ":",
     classpath: config.classpathEntries.join(":"),
     launcher_name: "minecraft-actions",
     launcher_version: "1",

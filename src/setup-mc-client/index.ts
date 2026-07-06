@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import * as cache from "@actions/cache";
 import * as core from "@actions/core";
@@ -14,7 +15,8 @@ import {
   mavenCoordinateToPath,
 } from "../lib/fabric.js";
 import { filterLibrariesForLinux } from "../lib/launcherRules.js";
-import { fetchVersionManifest, getFullVersionData, type MojangArgumentEntry } from "../lib/mojang.js";
+import { fetchVersionManifest, getFullVersionData, type MojangArgumentEntry, type MojangLibrary } from "../lib/mojang.js";
+import { buildNeoForgeInstallerUrl, fetchNeoForgeVersions, findLatestNeoForgeVersion } from "../lib/neoforge.js";
 
 interface LibraryDownload {
   url: string;
@@ -22,6 +24,28 @@ interface LibraryDownload {
   sha1?: string;
   size?: number;
   label: string;
+}
+
+interface LoaderResult {
+  mainClass?: string;
+  extraJvmArgs: MojangArgumentEntry[];
+  extraGameArgs: MojangArgumentEntry[];
+  libraryDownloads: LibraryDownload[];
+  cacheKeySuffix: string;
+}
+
+function libraryToDownload(library: MojangLibrary): LibraryDownload {
+  const artifact = library.downloads.artifact;
+  if (!artifact) {
+    throw new Error(`Library ${library.name} has no artifact after filtering`);
+  }
+  return {
+    url: artifact.url,
+    relativePath: join("libraries", artifact.path),
+    sha1: artifact.sha1,
+    size: artifact.size,
+    label: library.name,
+  };
 }
 
 async function tryRestoreCache(paths: string[], key: string): Promise<boolean> {
@@ -129,6 +153,119 @@ async function downloadLibraries(
   return classpathEntries;
 }
 
+async function setupFabric(mcVersion: string, userAgent: string): Promise<LoaderResult> {
+  const inputLoaderVersion = core.getInput("fabric-loader-version");
+  const loaderVersion = inputLoaderVersion || findLatestStableFabricVersion(await fetchFabricLoaderVersions(userAgent));
+  if (!loaderVersion) {
+    throw new Error("Could not find a stable Fabric Loader version");
+  }
+  core.info(`Fabric Loader: ${loaderVersion}`);
+  core.setOutput("fabric-loader-version", loaderVersion);
+
+  // Fabric's "profile" is a standard Mojang launcher version JSON with
+  // inheritsFrom: <mcVersion> - it only overrides mainClass, adds a few extra
+  // jvm/game args, and lists its own (pure-Java, no OS rules) libraries.
+  const profile = await fetchFabricProfile(mcVersion, loaderVersion, userAgent);
+  return {
+    mainClass: profile.mainClass,
+    extraJvmArgs: profile.arguments.jvm,
+    extraGameArgs: profile.arguments.game,
+    libraryDownloads: profile.libraries.map((library) => ({
+      url: buildFabricLibraryUrl(library),
+      relativePath: join("libraries", mavenCoordinateToPath(library.name)),
+      sha1: library.sha1,
+      size: library.size,
+      label: library.name,
+    })),
+    cacheKeySuffix: `-fabric-${loaderVersion}`,
+  };
+}
+
+async function setupNeoForge(mcVersion: string, userAgent: string, clientDirectory: string): Promise<LoaderResult> {
+  const inputNeoForgeVersion = core.getInput("neoforge-version");
+  const numericVersion = mcVersion.replace(/-(snapshot|pre|rc).*$/, "");
+  const neoforgeVersion =
+    inputNeoForgeVersion || findLatestNeoForgeVersion(await fetchNeoForgeVersions(userAgent), numericVersion);
+  if (!neoforgeVersion) {
+    throw new Error(`Could not find a NeoForge version for Minecraft ${mcVersion}`);
+  }
+  core.info(`NeoForge: ${neoforgeVersion}`);
+  core.setOutput("neoforge-version", neoforgeVersion);
+
+  // Unlike Fabric, NeoForge has no client-loader metadata API - the installer must
+  // actually run. It also refuses to run at all against a directory with no launcher
+  // profile record, so a minimal stub is required first.
+  writeFileSync(join(clientDirectory, "launcher_profiles.json"), JSON.stringify({ profiles: {}, settings: {}, version: 3 }));
+
+  const installerPath = join(clientDirectory, "installer.jar");
+  await downloadToFile(buildNeoForgeInstallerUrl(neoforgeVersion), userAgent, installerPath);
+
+  const result = spawnSync("java", ["-jar", "installer.jar", "--install-client", "."], {
+    cwd: clientDirectory,
+    stdio: "inherit",
+  });
+  if (result.status !== 0) {
+    throw new Error(`NeoForge installer exited with code ${result.status}`);
+  }
+  unlinkSync(installerPath);
+
+  const profileId = `neoforge-${neoforgeVersion}`;
+  const profile = JSON.parse(readFileSync(join(clientDirectory, "versions", profileId, `${profileId}.json`), "utf8")) as {
+    mainClass: string;
+    arguments: { game: MojangArgumentEntry[]; jvm: MojangArgumentEntry[] };
+    libraries: MojangLibrary[];
+  };
+
+  // The installer's own patched/universal client jar isn't listed in the profile's
+  // libraries at all - it's an implicit output at a version-derived path, and it must
+  // NOT be added to the classpath: FML's GameLocator treats any classpath that already
+  // contains both a resolvable NeoForge jar and a resolvable patched-Minecraft jar as a
+  // NeoGradle dev workspace, which then requires a "Minecraft-Dists" manifest attribute
+  // our installer output doesn't have. Leaving these two jars off the classpath entirely
+  // instead makes GameLocator take its production-locate path (using the profile's own
+  // --fml.mcVersion/--fml.neoForgeVersion/--fml.neoFormVersion game args, already passed
+  // through via extraGameArgs below), which finds them itself under libraryDirectory.
+  // They're still verified present here as a sanity check that the installer actually
+  // produced usable output - just never referenced on -cp.
+  //
+  // Filename depends on the Minecraft versioning scheme: the old 1.x scheme goes through
+  // a binary-patcher producing "-client.jar", while the newer year-based scheme (e.g.
+  // 26.x) ships a "-universal.jar" instead (confirmed live for both) - so check both
+  // rather than assuming one.
+  const neoforgeLibDir = join("libraries", "net", "neoforged", "neoforge", neoforgeVersion);
+  const universalJarRelativePath = join(neoforgeLibDir, `neoforge-${neoforgeVersion}-universal.jar`);
+  const patchedJarCandidates = [
+    join(neoforgeLibDir, `neoforge-${neoforgeVersion}-client.jar`),
+    join("libraries", "net", "neoforged", "minecraft-client-patched", neoforgeVersion, `minecraft-client-patched-${neoforgeVersion}.jar`),
+  ];
+  const patchedJarRelativePath = patchedJarCandidates.find((candidate) => existsSync(join(clientDirectory, candidate)));
+  if (!existsSync(join(clientDirectory, universalJarRelativePath)) || !patchedJarRelativePath) {
+    const dirsChecked = [
+      neoforgeLibDir,
+      join("libraries", "net", "neoforged", "minecraft-client-patched", neoforgeVersion),
+    ];
+    const found = dirsChecked
+      .map((dir) => {
+        const dirAbs = join(clientDirectory, dir);
+        return `${dir}: ${existsSync(dirAbs) ? readdirSync(dirAbs).join(", ") : "(doesn't exist)"}`;
+      })
+      .join("; ");
+    throw new Error(`Expected a NeoForge universal jar and a patched Minecraft jar, found: ${found}`);
+  }
+
+  // Installer scaffolding not needed at launch time.
+  rmSync(join(clientDirectory, "versions"), { recursive: true, force: true });
+  rmSync(join(clientDirectory, "launcher_profiles.json"), { force: true });
+
+  return {
+    mainClass: profile.mainClass,
+    extraJvmArgs: profile.arguments.jvm,
+    extraGameArgs: profile.arguments.game,
+    libraryDownloads: filterLibrariesForLinux(profile.libraries).map(libraryToDownload),
+    cacheKeySuffix: `-neoforge-${neoforgeVersion}`,
+  };
+}
+
 async function run(): Promise<void> {
   const userAgent = core.getInput("user-agent", { required: true });
   const inputMcVersion = core.getInput("minecraft-version");
@@ -142,8 +279,8 @@ async function run(): Promise<void> {
     core.setFailed(`Unknown asset-download-strategy "${assetStrategy}", expected "full" or "skip"`);
     return;
   }
-  if (loader !== "vanilla" && loader !== "fabric") {
-    core.setFailed(`Unknown loader "${loader}", expected "vanilla" or "fabric"`);
+  if (loader !== "vanilla" && loader !== "fabric" && loader !== "neoforge") {
+    core.setFailed(`Unknown loader "${loader}", expected "vanilla", "fabric", or "neoforge"`);
     return;
   }
 
@@ -169,54 +306,31 @@ async function run(): Promise<void> {
   core.info(`Wrote client.jar (${clientJarBytes.length} bytes)`);
   core.endGroup();
 
+  const vanillaLibraryDownloads = filterLibrariesForLinux(versionData.libraries).map(libraryToDownload);
+
   let mainClass = versionData.mainClass;
   let jvmArgTemplate: MojangArgumentEntry[] = versionData.arguments.jvm;
   let gameArgTemplate: MojangArgumentEntry[] = versionData.arguments.game;
+  let loaderLibraryDownloads: LibraryDownload[] = [];
   let libraryCacheKey = `mc-client-libraries-${mcVersion}`;
-
-  const vanillaLibraryDownloads: LibraryDownload[] = filterLibrariesForLinux(versionData.libraries).map((library) => {
-    const artifact = library.downloads.artifact;
-    if (!artifact) {
-      throw new Error(`Library ${library.name} has no artifact after filtering`);
-    }
-    return {
-      url: artifact.url,
-      relativePath: join("libraries", artifact.path),
-      sha1: artifact.sha1,
-      size: artifact.size,
-      label: library.name,
-    };
-  });
-  let fabricLibraryDownloads: LibraryDownload[] = [];
 
   if (loader === "fabric") {
     core.startGroup("Fabric Loader");
-    const inputLoaderVersion = core.getInput("fabric-loader-version");
-    const loaderVersion = inputLoaderVersion || findLatestStableFabricVersion(await fetchFabricLoaderVersions(userAgent));
-    if (!loaderVersion) {
-      core.setFailed("Could not find a stable Fabric Loader version");
-      return;
-    }
-    core.info(`Fabric Loader: ${loaderVersion}`);
-    core.setOutput("fabric-loader-version", loaderVersion);
-
-    // Fabric's "profile" is a standard Mojang launcher version JSON with
-    // inheritsFrom: <mcVersion> - it only overrides mainClass, adds a few extra
-    // jvm/game args, and lists its own (pure-Java, no OS rules) libraries. Everything
-    // else (assets, downloads.client, logging, vanilla libraries) still comes from the
-    // vanilla version data fetched above.
-    const profile = await fetchFabricProfile(mcVersion, loaderVersion, userAgent);
-    mainClass = profile.mainClass;
-    jvmArgTemplate = [...versionData.arguments.jvm, ...profile.arguments.jvm];
-    gameArgTemplate = [...versionData.arguments.game, ...profile.arguments.game];
-    libraryCacheKey += `-fabric-${loaderVersion}`;
-    fabricLibraryDownloads = profile.libraries.map((library) => ({
-      url: buildFabricLibraryUrl(library),
-      relativePath: join("libraries", mavenCoordinateToPath(library.name)),
-      sha1: library.sha1,
-      size: library.size,
-      label: library.name,
-    }));
+    const fabric = await setupFabric(mcVersion, userAgent);
+    mainClass = fabric.mainClass ?? mainClass;
+    jvmArgTemplate = [...jvmArgTemplate, ...fabric.extraJvmArgs];
+    gameArgTemplate = [...gameArgTemplate, ...fabric.extraGameArgs];
+    loaderLibraryDownloads = fabric.libraryDownloads;
+    libraryCacheKey += fabric.cacheKeySuffix;
+    core.endGroup();
+  } else if (loader === "neoforge") {
+    core.startGroup("NeoForge installer");
+    const neoforge = await setupNeoForge(mcVersion, userAgent, clientDirectory);
+    mainClass = neoforge.mainClass ?? mainClass;
+    jvmArgTemplate = [...jvmArgTemplate, ...neoforge.extraJvmArgs];
+    gameArgTemplate = [...gameArgTemplate, ...neoforge.extraGameArgs];
+    loaderLibraryDownloads = neoforge.libraryDownloads;
+    libraryCacheKey += neoforge.cacheKeySuffix;
     core.endGroup();
   }
 
@@ -224,7 +338,7 @@ async function run(): Promise<void> {
   const classpathEntries = await downloadLibraries(
     clientDirectory,
     userAgent,
-    [...vanillaLibraryDownloads, ...fabricLibraryDownloads],
+    [...vanillaLibraryDownloads, ...loaderLibraryDownloads],
     libraryCacheKey,
     concurrency,
   );
