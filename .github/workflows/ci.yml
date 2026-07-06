@@ -201,6 +201,16 @@ jobs:
   test-mc-client:
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - loader: vanilla
+            port: 25568
+            rconPort: 25578
+          - loader: fabric
+            port: 25569
+            rconPort: 25579
     steps:
       - uses: actions/checkout@v4
 
@@ -234,8 +244,8 @@ jobs:
           server-directory: mc-server
           accept-eula: "true"
           server-properties: |
-            server-port=25568
-            rcon.port=25578
+            server-port=${{ matrix.port }}
+            rcon.port=${{ matrix.rconPort }}
 
       - name: Run Minecraft server
         id: run-server
@@ -249,15 +259,21 @@ jobs:
         uses: ./setup-mc-client
         with:
           minecraft-version: ${{ steps.mc-versions.outputs.minecraft-version }}
+          loader: ${{ matrix.loader }}
           user-agent: minecraft-actions-ci
           client-directory: mc-client
+
+      - name: Check setup-mc-client Fabric outputs
+        if: matrix.loader == 'fabric'
+        run: |
+          test -n "${{ steps.setup-client.outputs.fabric-loader-version }}"
 
       - name: Run Minecraft client (join server)
         id: run-client
         uses: ./run-mc-client
         with:
           client-directory: mc-client
-          server-address: 127.0.0.1:25568
+          server-address: 127.0.0.1:${{ matrix.port }}
           timeout-seconds: "180"
 
       - name: Check run-mc-client outputs

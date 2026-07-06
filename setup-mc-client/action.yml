@@ -1,7 +1,7 @@
 name: Setup Minecraft client
 description: >-
-  Downloads a vanilla Minecraft Java Edition client (jar, libraries, assets, log4j
-  config) and writes a launch-config.json describing how to launch it, ready to be
+  Downloads a Minecraft Java Edition client (vanilla or Fabric - jar, libraries, assets,
+  log4j config) and writes a launch-config.json describing how to launch it, ready to be
   started by the run-mc-client action. This client is only ever intended to join a
   singleplayer world it owns or a server with online-mode=false (like this repo's own
   setup-mc-server default) - there is no real Microsoft/Xbox authentication here, just
@@ -22,6 +22,15 @@ inputs:
     description: Directory to install the client into.
     required: false
     default: "."
+  loader:
+    description: Client type to install. One of "vanilla" or "fabric".
+    required: false
+    default: vanilla
+  fabric-loader-version:
+    description: >-
+      Fabric Loader version to use when loader is "fabric". If not supplied, falls back
+      to the latest stable version.
+    required: false
   asset-download-strategy:
     description: >-
       "full" downloads every asset object referenced by the version's asset index
@@ -51,6 +60,8 @@ outputs:
     description: Directory the client was installed into
   minecraft-version:
     description: The resolved Minecraft version
+  fabric-loader-version:
+    description: The resolved Fabric Loader version (only set when loader is "fabric")
 
 runs:
   using: node24

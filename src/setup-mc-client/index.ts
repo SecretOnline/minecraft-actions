@@ -6,8 +6,23 @@ import PQueue from "p-queue";
 import { type AssetIndex, assetObjectPath, buildAssetObjectUrl } from "../lib/assets.js";
 import { buildClientOptions } from "../lib/clientOptions.js";
 import { downloadToFile, verifySha1 } from "../lib/download.js";
+import {
+  buildFabricLibraryUrl,
+  fetchFabricLoaderVersions,
+  fetchFabricProfile,
+  findLatestStableFabricVersion,
+  mavenCoordinateToPath,
+} from "../lib/fabric.js";
 import { filterLibrariesForLinux } from "../lib/launcherRules.js";
-import { fetchVersionManifest, getFullVersionData } from "../lib/mojang.js";
+import { fetchVersionManifest, getFullVersionData, type MojangArgumentEntry } from "../lib/mojang.js";
+
+interface LibraryDownload {
+  url: string;
+  relativePath: string;
+  sha1?: string;
+  size?: number;
+  label: string;
+}
 
 async function tryRestoreCache(paths: string[], key: string): Promise<boolean> {
   try {
@@ -83,35 +98,30 @@ async function downloadAssets(
 async function downloadLibraries(
   clientDirectory: string,
   userAgent: string,
-  libraries: ReturnType<typeof filterLibrariesForLinux>,
-  mcVersion: string,
+  libraryDownloads: LibraryDownload[],
+  cacheKey: string,
   concurrency: number,
 ): Promise<string[]> {
   const librariesDir = join(clientDirectory, "libraries");
-  const cacheKey = `mc-client-libraries-${mcVersion}`;
   const cacheHit = await tryRestoreCache([librariesDir], cacheKey);
 
   const queue = new PQueue({ concurrency });
-  const classpathEntries: string[] = ["client.jar"];
-  const tasks = libraries.map((library) => {
-    const artifact = library.downloads.artifact;
-    if (!artifact) {
-      return undefined;
-    }
-    const relativePath = join("libraries", artifact.path);
-    classpathEntries.push(relativePath);
-    return queue.add(async () => {
-      const destination = join(clientDirectory, relativePath);
-      if (existsSync(destination) && statSync(destination).size === artifact.size) {
+  const classpathEntries: string[] = ["client.jar", ...libraryDownloads.map((lib) => lib.relativePath)];
+  const tasks = libraryDownloads.map((lib) =>
+    queue.add(async () => {
+      const destination = join(clientDirectory, lib.relativePath);
+      if (existsSync(destination) && (lib.size === undefined || statSync(destination).size === lib.size)) {
         return;
       }
       mkdirSync(dirname(destination), { recursive: true });
-      const bytes = await downloadToFile(artifact.url, userAgent, destination);
-      verifySha1(bytes, artifact.sha1, library.name);
-    });
-  });
+      const bytes = await downloadToFile(lib.url, userAgent, destination);
+      if (lib.sha1) {
+        verifySha1(bytes, lib.sha1, lib.label);
+      }
+    }),
+  );
   await Promise.all(tasks);
-  core.info(`Downloaded ${libraries.length} libraries`);
+  core.info(`Downloaded ${libraryDownloads.length} libraries`);
 
   if (!cacheHit) {
     await trySaveCache([librariesDir], cacheKey);
@@ -126,9 +136,14 @@ async function run(): Promise<void> {
   const assetStrategy = core.getInput("asset-download-strategy") || "full";
   const concurrency = Number(core.getInput("download-concurrency") || "8");
   const clientOptions = core.getInput("client-options");
+  const loader = core.getInput("loader") || "vanilla";
 
   if (assetStrategy !== "full" && assetStrategy !== "skip") {
     core.setFailed(`Unknown asset-download-strategy "${assetStrategy}", expected "full" or "skip"`);
+    return;
+  }
+  if (loader !== "vanilla" && loader !== "fabric") {
+    core.setFailed(`Unknown loader "${loader}", expected "vanilla" or "fabric"`);
     return;
   }
 
@@ -154,9 +169,65 @@ async function run(): Promise<void> {
   core.info(`Wrote client.jar (${clientJarBytes.length} bytes)`);
   core.endGroup();
 
+  let mainClass = versionData.mainClass;
+  let jvmArgTemplate: MojangArgumentEntry[] = versionData.arguments.jvm;
+  let gameArgTemplate: MojangArgumentEntry[] = versionData.arguments.game;
+  let libraryCacheKey = `mc-client-libraries-${mcVersion}`;
+
+  const vanillaLibraryDownloads: LibraryDownload[] = filterLibrariesForLinux(versionData.libraries).map((library) => {
+    const artifact = library.downloads.artifact;
+    if (!artifact) {
+      throw new Error(`Library ${library.name} has no artifact after filtering`);
+    }
+    return {
+      url: artifact.url,
+      relativePath: join("libraries", artifact.path),
+      sha1: artifact.sha1,
+      size: artifact.size,
+      label: library.name,
+    };
+  });
+  let fabricLibraryDownloads: LibraryDownload[] = [];
+
+  if (loader === "fabric") {
+    core.startGroup("Fabric Loader");
+    const inputLoaderVersion = core.getInput("fabric-loader-version");
+    const loaderVersion = inputLoaderVersion || findLatestStableFabricVersion(await fetchFabricLoaderVersions(userAgent));
+    if (!loaderVersion) {
+      core.setFailed("Could not find a stable Fabric Loader version");
+      return;
+    }
+    core.info(`Fabric Loader: ${loaderVersion}`);
+    core.setOutput("fabric-loader-version", loaderVersion);
+
+    // Fabric's "profile" is a standard Mojang launcher version JSON with
+    // inheritsFrom: <mcVersion> - it only overrides mainClass, adds a few extra
+    // jvm/game args, and lists its own (pure-Java, no OS rules) libraries. Everything
+    // else (assets, downloads.client, logging, vanilla libraries) still comes from the
+    // vanilla version data fetched above.
+    const profile = await fetchFabricProfile(mcVersion, loaderVersion, userAgent);
+    mainClass = profile.mainClass;
+    jvmArgTemplate = [...versionData.arguments.jvm, ...profile.arguments.jvm];
+    gameArgTemplate = [...versionData.arguments.game, ...profile.arguments.game];
+    libraryCacheKey += `-fabric-${loaderVersion}`;
+    fabricLibraryDownloads = profile.libraries.map((library) => ({
+      url: buildFabricLibraryUrl(library),
+      relativePath: join("libraries", mavenCoordinateToPath(library.name)),
+      sha1: library.sha1,
+      size: library.size,
+      label: library.name,
+    }));
+    core.endGroup();
+  }
+
   core.startGroup("Downloading libraries");
-  const libraries = filterLibrariesForLinux(versionData.libraries);
-  const classpathEntries = await downloadLibraries(clientDirectory, userAgent, libraries, mcVersion, concurrency);
+  const classpathEntries = await downloadLibraries(
+    clientDirectory,
+    userAgent,
+    [...vanillaLibraryDownloads, ...fabricLibraryDownloads],
+    libraryCacheKey,
+    concurrency,
+  );
   core.endGroup();
 
   let logConfigPath: string | undefined;
@@ -188,12 +259,12 @@ async function run(): Promise<void> {
     JSON.stringify(
       {
         mcVersion,
-        mainClass: versionData.mainClass,
+        mainClass,
         assetsIndexId: versionData.assetIndex.id,
         nativesDirectory,
         classpathEntries,
-        jvmArgTemplate: versionData.arguments.jvm,
-        gameArgTemplate: versionData.arguments.game,
+        jvmArgTemplate,
+        gameArgTemplate,
         logConfigArgument,
         logConfigPath,
       },
