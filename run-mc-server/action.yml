@@ -1,0 +1,36 @@
+name: Run Minecraft server
+description: >-
+  Starts a Minecraft server (installed by setup-mc-server) in the background and waits
+  for it to become ready, failing fast if it crashes first. Gracefully stops the server
+  over RCON in a post step once the job's later steps have finished.
+
+inputs:
+  server-directory:
+    description: Directory the server was installed into by setup-mc-server.
+    required: false
+    default: "."
+  java-args:
+    description: Extra arguments to pass to the java command, before -jar.
+    required: false
+  ready-pattern:
+    description: Substring to look for in the server log that indicates it is ready.
+    required: false
+    default: "Done ("
+  timeout-seconds:
+    description: How long to wait for the server to become ready before failing.
+    required: false
+    default: "300"
+  log-file:
+    description: Path to redirect the server's stdout/stderr to.
+    required: false
+
+outputs:
+  pid:
+    description: Process ID of the running server
+  log-file:
+    description: Path the server's stdout/stderr was redirected to
+
+runs:
+  using: node24
+  main: dist/index.js
+  post: dist/index.js

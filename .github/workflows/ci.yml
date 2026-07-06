@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  build-and-test:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,6 +26,28 @@ jobs:
 
       - name: Unit test
         run: npm test
+
+      - name: Upload built actions
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: |
+            get-test-matrix/dist
+            get-update-versions/dist
+            setup-mod-gradle/resolve-java/dist
+            setup-mc-server/dist
+            run-mc-server/dist
+
+  test-version-actions:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: .
 
       - name: Run get-test-matrix against fixture (1.x scheme)
         id: test-matrix
@@ -101,3 +123,47 @@ jobs:
           test -n "${{ steps.update-versions-new-scheme-no-patch.outputs.fabric-api-version }}"
           test -n "${{ steps.update-versions-new-scheme-no-patch.outputs.neoforge-version }}"
           test -n "${{ steps.update-versions-new-scheme-no-patch.outputs.neoform-version }}"
+
+  test-mc-server:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: .
+
+      - name: Resolve latest Minecraft version for server smoke test
+        id: mc-versions
+        uses: ./get-update-versions
+        with:
+          user-agent: minecraft-actions-ci
+
+      - name: Set up JDK for Minecraft server
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ steps.mc-versions.outputs.java-version }}
+
+      - name: Set up Minecraft server
+        id: setup-server
+        uses: ./setup-mc-server
+        with:
+          minecraft-version: ${{ steps.mc-versions.outputs.minecraft-version }}
+          user-agent: minecraft-actions-ci
+          server-directory: mc-server
+          accept-eula: "true"
+
+      - name: Run Minecraft server
+        id: run-server
+        uses: ./run-mc-server
+        with:
+          server-directory: mc-server
+          timeout-seconds: "120"
+
+      - name: Check run-mc-server outputs and reachability
+        run: |
+          test -n "${{ steps.run-server.outputs.pid }}"
+          timeout 5 bash -c '</dev/tcp/127.0.0.1/25565' && echo "Server port is open"

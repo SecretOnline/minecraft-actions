@@ -13,6 +13,7 @@ export interface MojangVersionManifest {
 
 interface MojangVersionData {
   javaVersion: { majorVersion: number };
+  downloads: { server?: { url: string; sha1: string; size: number } };
 }
 
 async function fetchJson<T>(url: string, userAgent: string): Promise<T> {
@@ -45,4 +46,26 @@ export async function getJavaVersionForMcVersion(
   }
   const data = await fetchJson<MojangVersionData>(entry.url, userAgent);
   return data.javaVersion.majorVersion;
+}
+
+export interface ServerDownload {
+  url: string;
+  sha1: string;
+  size: number;
+}
+
+export async function getServerDownloadForMcVersion(
+  manifest: MojangVersionManifest,
+  mcVersion: string,
+  userAgent: string,
+): Promise<ServerDownload> {
+  const entry = findVersionEntry(manifest, mcVersion);
+  if (!entry) {
+    throw new Error(`Could not find Minecraft version ${mcVersion} in version manifest`);
+  }
+  const data = await fetchJson<MojangVersionData>(entry.url, userAgent);
+  if (!data.downloads.server) {
+    throw new Error(`Minecraft version ${mcVersion} has no server download`);
+  }
+  return data.downloads.server;
 }

@@ -5,7 +5,8 @@
   "scripts": {
     "build": "node esbuild.config.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:act": "act push --artifact-server-path .act-artifacts"
   },
   "devDependencies": {
     "@actions/core": "^1.11.1",
