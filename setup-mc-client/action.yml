@@ -1,0 +1,57 @@
+name: Setup Minecraft client
+description: >-
+  Downloads a vanilla Minecraft Java Edition client (jar, libraries, assets, log4j
+  config) and writes a launch-config.json describing how to launch it, ready to be
+  started by the run-mc-client action. This client is only ever intended to join a
+  singleplayer world it owns or a server with online-mode=false (like this repo's own
+  setup-mc-server default) - there is no real Microsoft/Xbox authentication here, just
+  fabricated offline-mode credentials supplied at run-mc-client time. Libraries and
+  assets are cached across runs via actions/cache (keyed by Minecraft version / asset
+  index id respectively) since assets in particular can be several hundred MB; a cache
+  miss falls back to downloading, so this works fine on the first run or if the cache is
+  unavailable (e.g. local `act` runs without --cache-server-path).
+
+inputs:
+  minecraft-version:
+    description: Minecraft version to run. If not supplied, falls back to latest release.
+    required: false
+  user-agent:
+    description: User-Agent string for HTTP requests.
+    required: true
+  client-directory:
+    description: Directory to install the client into.
+    required: false
+    default: "."
+  asset-download-strategy:
+    description: >-
+      "full" downloads every asset object referenced by the version's asset index
+      (matches what the real launcher does; can be several hundred MB but is the safe
+      default). "skip" downloads only the asset index and none of the objects, for
+      faster CI - this is an unverified gamble on whether the client tolerates a fully
+      empty assets/objects directory, so treat it as experimental.
+    required: false
+    default: full
+  download-concurrency:
+    description: >-
+      Maximum number of libraries/asset objects to download in parallel. Kept modest by
+      default to avoid hammering Mojang's CDN.
+    required: false
+    default: "8"
+  client-options:
+    description: >-
+      Extra options.txt lines ("key:value", one per line - note the colon, options.txt's
+      own format, unlike server.properties' "=") to apply on top of the defaults that
+      skip first-launch UI (skipMultiplayerWarning:true, onboardAccessibility:false,
+      joinedFirstServer:true, tutorialStep:none) which would otherwise block a headless
+      client from ever reaching a joinable state.
+    required: false
+
+outputs:
+  client-directory:
+    description: Directory the client was installed into
+  minecraft-version:
+    description: The resolved Minecraft version
+
+runs:
+  using: node24
+  main: dist/index.js

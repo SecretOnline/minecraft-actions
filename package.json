@@ -6,12 +6,14 @@
     "build": "node esbuild.config.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:act": "act push --artifact-server-path .act-artifacts"
+    "test:act": "act push --artifact-server-path .act-artifacts --cache-server-path .act-cache"
   },
   "devDependencies": {
+    "@actions/cache": "^6.1.0",
     "@actions/core": "^1.11.1",
     "@types/node": "^24.0.0",
     "esbuild": "^0.24.0",
+    "p-queue": "^9.3.1",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   }

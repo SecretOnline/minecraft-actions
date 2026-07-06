@@ -11,9 +11,31 @@ export interface MojangVersionManifest {
   versions: MojangVersionEntry[];
 }
 
-interface MojangVersionData {
+export interface MojangRule {
+  action: "allow" | "disallow";
+  os?: { name?: string; arch?: string; version?: string };
+  features?: Record<string, boolean>;
+}
+
+export type MojangArgumentEntry = string | { rules: MojangRule[]; value: string | string[] };
+
+export interface MojangLibrary {
+  name: string;
+  downloads: { artifact?: { path: string; url: string; sha1: string; size: number } };
+  rules?: MojangRule[];
+}
+
+export interface MojangVersionData {
   javaVersion: { majorVersion: number };
-  downloads: { server?: { url: string; sha1: string; size: number } };
+  downloads: {
+    server?: { url: string; sha1: string; size: number };
+    client?: { url: string; sha1: string; size: number };
+  };
+  assetIndex: { id: string; url: string; sha1: string; size: number; totalSize: number };
+  libraries: MojangLibrary[];
+  mainClass: string;
+  logging?: { client?: { argument: string; file: { id: string; url: string; sha1: string; size: number } } };
+  arguments: { game: MojangArgumentEntry[]; jvm: MojangArgumentEntry[] };
 }
 
 async function fetchJson<T>(url: string, userAgent: string): Promise<T> {
@@ -35,16 +57,24 @@ export function findVersionEntry(
   return manifest.versions.find((v) => v.id === mcVersion);
 }
 
+export async function getFullVersionData(
+  manifest: MojangVersionManifest,
+  mcVersion: string,
+  userAgent: string,
+): Promise<MojangVersionData> {
+  const entry = findVersionEntry(manifest, mcVersion);
+  if (!entry) {
+    throw new Error(`Could not find Minecraft version ${mcVersion} in version manifest`);
+  }
+  return fetchJson<MojangVersionData>(entry.url, userAgent);
+}
+
 export async function getJavaVersionForMcVersion(
   manifest: MojangVersionManifest,
   mcVersion: string,
   userAgent: string,
 ): Promise<number> {
-  const entry = findVersionEntry(manifest, mcVersion);
-  if (!entry) {
-    throw new Error(`Could not find Minecraft version ${mcVersion} in version manifest`);
-  }
-  const data = await fetchJson<MojangVersionData>(entry.url, userAgent);
+  const data = await getFullVersionData(manifest, mcVersion, userAgent);
   return data.javaVersion.majorVersion;
 }
 
@@ -59,13 +89,27 @@ export async function getServerDownloadForMcVersion(
   mcVersion: string,
   userAgent: string,
 ): Promise<ServerDownload> {
-  const entry = findVersionEntry(manifest, mcVersion);
-  if (!entry) {
-    throw new Error(`Could not find Minecraft version ${mcVersion} in version manifest`);
-  }
-  const data = await fetchJson<MojangVersionData>(entry.url, userAgent);
+  const data = await getFullVersionData(manifest, mcVersion, userAgent);
   if (!data.downloads.server) {
     throw new Error(`Minecraft version ${mcVersion} has no server download`);
   }
   return data.downloads.server;
+}
+
+export interface ClientDownload {
+  url: string;
+  sha1: string;
+  size: number;
+}
+
+export async function getClientDownloadForMcVersion(
+  manifest: MojangVersionManifest,
+  mcVersion: string,
+  userAgent: string,
+): Promise<ClientDownload> {
+  const data = await getFullVersionData(manifest, mcVersion, userAgent);
+  if (!data.downloads.client) {
+    throw new Error(`Minecraft version ${mcVersion} has no client download`);
+  }
+  return data.downloads.client;
 }

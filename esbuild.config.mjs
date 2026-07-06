@@ -6,6 +6,8 @@ const entryPoints = [
   { in: "src/setup-mod-gradle/resolve-java/index.ts", out: "setup-mod-gradle/resolve-java/dist/index.js" },
   { in: "src/setup-mc-server/index.ts", out: "setup-mc-server/dist/index.js" },
   { in: "src/run-mc-server/index.ts", out: "run-mc-server/dist/index.js" },
+  { in: "src/setup-mc-client/index.ts", out: "setup-mc-client/dist/index.js" },
+  { in: "src/run-mc-client/index.ts", out: "run-mc-client/dist/index.js" },
 ];
 
 for (const { in: inFile, out: outFile } of entryPoints) {
@@ -17,6 +19,10 @@ for (const { in: inFile, out: outFile } of entryPoints) {
     target: "node24",
     format: "cjs",
     sourcemap: false,
+    // @actions/cache's dependency chain uses import.meta.url (e.g. for createRequire),
+    // which esbuild's CJS output doesn't provide natively - shim it via __filename.
+    define: { "import.meta.url": "import_meta_url" },
+    banner: { js: "const import_meta_url = require('url').pathToFileURL(__filename).href;" },
   });
   console.log(`built ${inFile} -> ${outFile}`);
 }

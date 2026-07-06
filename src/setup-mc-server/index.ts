@@ -1,8 +1,9 @@
 import { spawnSync } from "node:child_process";
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { mkdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import * as core from "@actions/core";
+import { downloadToFile, verifySha1 } from "../lib/download.js";
 import {
   buildFabricServerJarUrl,
   fetchFabricInstallerVersions,
@@ -13,16 +14,6 @@ import { fetchVersionManifest, getServerDownloadForMcVersion } from "../lib/moja
 import { buildNeoForgeInstallerUrl, fetchNeoForgeVersions, findLatestNeoForgeVersion } from "../lib/neoforge.js";
 import { buildServerProperties } from "../lib/serverProperties.js";
 
-async function downloadToFile(url: string, userAgent: string, destination: string): Promise<Buffer> {
-  const response = await fetch(url, { headers: { "User-Agent": userAgent } });
-  if (!response.ok) {
-    throw new Error(`Failed to download ${url}: HTTP ${response.status}`);
-  }
-  const bytes = Buffer.from(await response.arrayBuffer());
-  writeFileSync(destination, bytes);
-  return bytes;
-}
-
 async function setupVanillaServer(
   mcVersion: string,
   userAgent: string,
@@ -31,10 +22,7 @@ async function setupVanillaServer(
 ): Promise<void> {
   const download = await getServerDownloadForMcVersion(manifest, mcVersion, userAgent);
   const jarBytes = await downloadToFile(download.url, userAgent, jarPath);
-  const actualSha1 = createHash("sha1").update(jarBytes).digest("hex");
-  if (actualSha1 !== download.sha1) {
-    throw new Error(`Server jar SHA-1 mismatch: expected ${download.sha1}, got ${actualSha1}`);
-  }
+  verifySha1(jarBytes, download.sha1, "Server jar");
   core.info(`Wrote ${jarPath} (${jarBytes.length} bytes)`);
 }
 
