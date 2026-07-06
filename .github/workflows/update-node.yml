@@ -5,6 +5,15 @@ on:
     # First day of the month.
     - cron: "0 6 1 * *"
   workflow_dispatch:
+    inputs:
+      node-major-version:
+        description: >-
+          Major Node.js version to update to (e.g. 24). If not set, uses the
+          latest LTS version. GitHub Actions runners only support specific
+          major versions for `using: nodeNN`, so pin this when the latest LTS
+          isn't supported yet.
+        required: false
+        type: string
 
 jobs:
   update-node:
@@ -18,8 +27,14 @@ jobs:
 
       - name: Update schema
         id: node-version
+        env:
+          MAJOR_FILTER: ${{ inputs.node-major-version }}
         run: |
-          latest=$(curl -s https://nodejs.org/dist/index.json | jq -r 'map(select(.lts))[0].version' | sed 's/v//')
+          if [ -z "$MAJOR_FILTER" ]; then
+            MAJOR_FILTER=$(sed -E 's/^v?([0-9]+).*/\1/' .node-version)
+          fi
+
+          latest=$(curl -s https://nodejs.org/dist/index.json | jq -r --arg major "$MAJOR_FILTER" 'map(select(.lts and ((.version | ltrimstr("v") | split(".")[0]) == $major)))[0].version' | sed 's/v//')
           major=$(echo "$latest" | cut -d. -f1)
 
           echo "latest=$latest" >> $GITHUB_OUTPUT
@@ -32,6 +47,13 @@ jobs:
         if: hashFiles('tsconfig.json') != ''
         run: npm install --save-dev @types/node@${{ steps.node-version.outputs.major }}
 
+      - name: Update action.yml runtime versions
+        run: |
+          major="${{ steps.node-version.outputs.major }}"
+          git ls-tree -r --name-only HEAD | grep -E '(^|/)action\.yml$' | while read -r file; do
+            sed -i -E "s/using: node[0-9]+/using: node${major}/" "$file"
+          done
+
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v8
         with:
@@ -39,6 +61,7 @@ jobs:
             .node-version
             package.json
             package-lock.json
+            **/action.yml
           commit-message: "[Auto] Update Node version"
           branch: auto-update/node
           delete-branch: true
