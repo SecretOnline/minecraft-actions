@@ -18,7 +18,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Build steps go here when JS actions are added (e.g. npm ci && npm run build)
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+
+      - name: Build JS actions
+        run: |
+          npm ci
+          npm run build
 
       - name: Parse changelog
         id: changelog
@@ -38,20 +45,19 @@ jobs:
         run: |
           source_sha=$(git rev-parse HEAD)
 
-          # Discover action directories
+          # Discover action directories (recursively, so nested actions like
+          # setup-mod-gradle/resolve-java are found too)
           mapfile -t action_dirs < <(
-            git ls-tree --name-only "$source_sha" \
-              | while IFS= read -r entry; do
-                  if git ls-tree "$source_sha" -- "$entry/action.yml" | grep -q .; then
-                    echo "$entry"
-                  fi
-                done
+            git ls-tree -r --name-only "$source_sha" \
+              | grep '/action\.yml$' \
+              | sed 's#/action\.yml$##'
           )
 
           # Stash any built dist/ directories from the working tree before switching branches
           for dir in "${action_dirs[@]}"; do
             if [ -d "$dir/dist" ]; then
-              cp -r "$dir/dist" "/tmp/$dir-dist"
+              mkdir -p "/tmp/$dir-dist"
+              cp -r "$dir/dist/." "/tmp/$dir-dist"
             fi
           done
 
@@ -68,7 +74,8 @@ jobs:
               git restore --source="$source_sha" -- "$dir/README.md"
             fi
             if [ -d "/tmp/$dir-dist" ]; then
-              cp -r "/tmp/$dir-dist" "$dir/dist"
+              mkdir -p "$dir/dist"
+              cp -r "/tmp/$dir-dist/." "$dir/dist"
             fi
           done
 

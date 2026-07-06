@@ -26,21 +26,10 @@ runs:
   steps:
     - name: Resolve Java version
       id: resolve-java
-      shell: bash
-      env:
-        INPUT_JAVA_VERSION: ${{ inputs.java-version }}
-        GRADLE_PROPERTIES: ${{ inputs.gradle-properties }}
-      run: |
-        if [ -n "$INPUT_JAVA_VERSION" ]; then
-          JAVA_VERSION="$INPUT_JAVA_VERSION"
-        else
-          JAVA_VERSION=$(grep '^java_version=' "$GRADLE_PROPERTIES" | cut -d= -f2)
-          if [ -z "$JAVA_VERSION" ]; then
-            echo "::error::Could not find java_version in $GRADLE_PROPERTIES"
-            exit 1
-          fi
-        fi
-        echo "java-version=$JAVA_VERSION" >> "$GITHUB_OUTPUT"
+      uses: ./setup-mod-gradle/resolve-java
+      with:
+        java-version: ${{ inputs.java-version }}
+        gradle-properties: ${{ inputs.gradle-properties }}
 
     - name: Ensure Gradle wrapper is executable
       shell: bash
