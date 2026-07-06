@@ -15,3 +15,31 @@ export function deriveNeoForgePrefix(numericVersion: string): string {
   }
   return `${numericVersion}.`;
 }
+
+/**
+ * Finds the latest stable (non-snapshot) NeoForge version for a given Minecraft version.
+ */
+export function findLatestNeoForgeVersion(versions: string[], numericMcVersion: string): string | undefined {
+  const prefix = deriveNeoForgePrefix(numericMcVersion);
+  return versions.filter((v) => v.startsWith(prefix) && !v.includes("+snapshot")).at(-1);
+}
+
+export function buildNeoForgeInstallerUrl(neoforgeVersion: string): string {
+  return `https://maven.neoforged.net/releases/net/neoforged/neoforge/${neoforgeVersion}/neoforge-${neoforgeVersion}-installer.jar`;
+}
+
+async function fetchJson<T>(url: string, userAgent: string): Promise<T> {
+  const response = await fetch(url, { headers: { "User-Agent": userAgent } });
+  if (!response.ok) {
+    throw new Error(`Request to ${url} failed with status ${response.status}`);
+  }
+  return (await response.json()) as T;
+}
+
+export async function fetchNeoForgeVersions(userAgent: string): Promise<string[]> {
+  const data = await fetchJson<{ versions: string[] }>(
+    "https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge",
+    userAgent,
+  );
+  return data.versions;
+}

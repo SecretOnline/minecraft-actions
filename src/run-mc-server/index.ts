@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { closeSync, mkdirSync, openSync, readFileSync } from "node:fs";
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import * as core from "@actions/core";
@@ -23,6 +23,18 @@ function isAlive(pid: number): boolean {
   }
 }
 
+/**
+ * Determines how to launch the server that setup-mc-server produced. Vanilla/Fabric
+ * both produce a plain executable server.jar, but NeoForge's installer produces
+ * run.sh (plus a libraries/ tree and argfiles) instead.
+ */
+function resolveLaunchCommand(serverDirectory: string): { command: string; args: string[] } {
+  if (existsSync(join(serverDirectory, "run.sh"))) {
+    return { command: "sh", args: ["run.sh", "nogui"] };
+  }
+  return { command: "java", args: ["-jar", "server.jar", "nogui"] };
+}
+
 async function start(): Promise<void> {
   const serverDirectory = core.getInput("server-directory") || ".";
   const javaArgs = core.getInput("java-args");
@@ -32,15 +44,19 @@ async function start(): Promise<void> {
 
   mkdirSync(serverDirectory, { recursive: true });
 
-  const args = [...javaArgs.split(/\s+/).filter(Boolean), "-jar", "server.jar", "nogui"];
+  const { command, args } = resolveLaunchCommand(serverDirectory);
+  // JAVA_TOOL_OPTIONS is picked up automatically by any `java` invocation, including the
+  // one inside NeoForge's run.sh, so this works regardless of how the server is launched.
+  const env = javaArgs ? { ...process.env, JAVA_TOOL_OPTIONS: javaArgs } : process.env;
   const logFd = openSync(logFile, "w");
-  const child = spawn("java", args, {
+  const child = spawn(command, args, {
     cwd: serverDirectory,
     detached: true,
     stdio: ["ignore", logFd, logFd],
+    env,
   });
   closeSync(logFd);
-  core.info(`Started java ${args.join(" ")} (pid ${child.pid}) in ${serverDirectory}`);
+  core.info(`Started ${command} ${args.join(" ")} (pid ${child.pid}) in ${serverDirectory}`);
 
   let exited = false;
   let exitInfo = "";

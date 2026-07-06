@@ -10,7 +10,10 @@ inputs:
     required: false
     default: "."
   java-args:
-    description: Extra arguments to pass to the java command, before -jar.
+    description: >-
+      Extra JVM arguments (e.g. -Xmx2G), applied via the JAVA_TOOL_OPTIONS environment
+      variable so they work regardless of how setup-mc-server launches the server (a
+      plain `java -jar server.jar` for vanilla/Fabric, or NeoForge's run.sh wrapper).
     required: false
   ready-pattern:
     description: Substring to look for in the server log that indicates it is ready.

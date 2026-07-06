@@ -127,6 +127,19 @@ jobs:
   test-mc-server:
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - loader: vanilla
+            port: 25565
+            rconPort: 25575
+          - loader: fabric
+            port: 25566
+            rconPort: 25576
+          - loader: neoforge
+            port: 25567
+            rconPort: 25577
     steps:
       - uses: actions/checkout@v4
 
@@ -152,9 +165,24 @@ jobs:
         uses: ./setup-mc-server
         with:
           minecraft-version: ${{ steps.mc-versions.outputs.minecraft-version }}
+          loader: ${{ matrix.loader }}
           user-agent: minecraft-actions-ci
           server-directory: mc-server
           accept-eula: "true"
+          server-properties: |
+            server-port=${{ matrix.port }}
+            rcon.port=${{ matrix.rconPort }}
+
+      - name: Check setup-mc-server Fabric outputs
+        if: matrix.loader == 'fabric'
+        run: |
+          test -n "${{ steps.setup-server.outputs.fabric-loader-version }}"
+          test -n "${{ steps.setup-server.outputs.fabric-installer-version }}"
+
+      - name: Check setup-mc-server NeoForge outputs
+        if: matrix.loader == 'neoforge'
+        run: |
+          test -n "${{ steps.setup-server.outputs.neoforge-version }}"
 
       - name: Run Minecraft server
         id: run-server
@@ -166,4 +194,4 @@ jobs:
       - name: Check run-mc-server outputs and reachability
         run: |
           test -n "${{ steps.run-server.outputs.pid }}"
-          timeout 5 bash -c '</dev/tcp/127.0.0.1/25565' && echo "Server port is open"
+          timeout 5 bash -c '</dev/tcp/127.0.0.1/${{ matrix.port }}' && echo "Server port is open"
