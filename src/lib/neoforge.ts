@@ -1,3 +1,8 @@
+import { spawnSync } from "node:child_process";
+import { unlinkSync } from "node:fs";
+import { join } from "node:path";
+import { downloadToFile } from "./download.js";
+
 /**
  * Derives the NeoForge version prefix from a Minecraft numeric version.
  *
@@ -26,6 +31,31 @@ export function findLatestNeoForgeVersion(versions: string[], numericMcVersion: 
 
 export function buildNeoForgeInstallerUrl(neoforgeVersion: string): string {
   return `https://maven.neoforged.net/releases/net/neoforged/neoforge/${neoforgeVersion}/neoforge-${neoforgeVersion}-installer.jar`;
+}
+
+/**
+ * Downloads the NeoForge installer and runs it against a directory, then removes the
+ * installer jar. Shared between setup-mc-server (`--installServer`) and
+ * setup-mc-client (`--install-client .`) - both follow the same
+ * download/run/verify-exit-code/cleanup shape, differing only in install args.
+ */
+export async function runNeoForgeInstaller(
+  neoforgeVersion: string,
+  userAgent: string,
+  directory: string,
+  installArgs: string[],
+): Promise<void> {
+  const installerPath = join(directory, "installer.jar");
+  await downloadToFile(buildNeoForgeInstallerUrl(neoforgeVersion), userAgent, installerPath);
+
+  const result = spawnSync("java", ["-jar", "installer.jar", ...installArgs], {
+    cwd: directory,
+    stdio: "inherit",
+  });
+  if (result.status !== 0) {
+    throw new Error(`NeoForge installer exited with code ${result.status}`);
+  }
+  unlinkSync(installerPath);
 }
 
 async function fetchJson<T>(url: string, userAgent: string): Promise<T> {
