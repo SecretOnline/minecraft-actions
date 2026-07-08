@@ -39,6 +39,7 @@ jobs:
             run-mc-server/dist
             setup-mc-client/dist
             run-mc-client/dist
+            setup-packwiz/dist
 
   test-version-actions:
     needs: build
@@ -287,3 +288,40 @@ jobs:
       - name: Check run-mc-client outputs
         run: |
           test -n "${{ steps.run-client.outputs.pid }}"
+
+  test-setup-packwiz:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: .
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Set up Packwiz
+        id: setup-packwiz
+        uses: ./setup-packwiz
+        with:
+          user-agent: minecraft-actions-ci
+
+      - name: Check setup-packwiz output and binary
+        run: |
+          test -n "${{ steps.setup-packwiz.outputs.packwiz-path }}"
+          packwiz --help
+
+      - name: Set up Packwiz again (exercise tool-cache/repeat-install path)
+        id: setup-packwiz-again
+        uses: ./setup-packwiz
+        with:
+          user-agent: minecraft-actions-ci
+
+      - name: Check setup-packwiz output and binary (second run)
+        run: |
+          test -n "${{ steps.setup-packwiz-again.outputs.packwiz-path }}"
+          packwiz --help

@@ -11,6 +11,7 @@
   "devDependencies": {
     "@actions/cache": "^6.1.0",
     "@actions/core": "^1.11.1",
+    "@actions/tool-cache": "^4.0.0",
     "@types/node": "^24.0.0",
     "esbuild": "^0.24.0",
     "p-queue": "^9.3.1",
