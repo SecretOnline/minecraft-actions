@@ -67,6 +67,15 @@ jobs:
           # Restore root README
           git restore --source="$source_sha" -- README.md
 
+          source_note=$(printf '> [!NOTE]\n> This release was generated from [`%s`](https://github.com/%s/commit/%s).' "$source_sha" "$GITHUB_REPOSITORY" "$source_sha")
+
+          # Note which commit this orphaned release was built from (after the title)
+          awk -v note="$source_note" '
+            NR==1 { print; print ""; print note; next }
+            { print }
+          ' README.md > /tmp/README.md.new
+          mv /tmp/README.md.new README.md
+
           # Restore each action's files
           for dir in "${action_dirs[@]}"; do
             git restore --source="$source_sha" -- "$dir/action.yml"
@@ -82,6 +91,7 @@ jobs:
           git add .
           git commit -m "Release v$VERSION"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "source-sha=$source_sha" >> "$GITHUB_OUTPUT"
 
       - name: Tag and push
         run: |
@@ -101,8 +111,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_NOTES: ${{ steps.changelog.outputs.release-notes }}
           RELEASE_SHA: ${{ steps.release-commit.outputs.sha }}
+          SOURCE_SHA: ${{ steps.release-commit.outputs.source-sha }}
         run: |
-          echo "$RELEASE_NOTES" > /tmp/release-notes.md
+          {
+            printf '> [!NOTE]\n> This release was generated from [`%s`](https://github.com/%s/commit/%s).\n\n' \
+              "$SOURCE_SHA" "$GITHUB_REPOSITORY" "$SOURCE_SHA"
+            echo "$RELEASE_NOTES"
+          } > /tmp/release-notes.md
           gh release create "v$VERSION" \
             --title "v$VERSION" \
             --target "$RELEASE_SHA" \
