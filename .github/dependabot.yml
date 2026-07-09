@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directories:
+      - "/"
+      - "/setup-mod-gradle"
+    schedule:
+      interval: "monthly"
+      timezone: "Pacific/Auckland"
+    groups:
+      all:
+        patterns:
+          - "*"
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      timezone: "Pacific/Auckland"
+    groups:
+      all:
+        patterns:
+          - "*"

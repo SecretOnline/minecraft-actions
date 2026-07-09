@@ -1,0 +1,92 @@
+name: Sync Dependabot version bumps to docs
+
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+
+jobs:
+  sync-docs:
+    if: >-
+      github.actor == 'dependabot[bot]' &&
+      startsWith(github.event.pull_request.head.ref, 'dependabot/github_actions/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Fetch base branch
+        run: git fetch origin ${{ github.event.pull_request.base.ref }} --depth=1
+
+      - name: Find version bumps and sync README examples
+        env:
+          BASE_REF: origin/${{ github.event.pull_request.base.ref }}
+        run: |
+          set -euo pipefail
+
+          # Manifests Dependabot itself edits: workflow files and any action.yml.
+          mapfile -t changed_files < <(
+            git diff --name-only "$BASE_REF"...HEAD -- \
+              '.github/workflows/*.yml' '.github/workflows/*.yaml' '**/action.yml'
+          )
+
+          if [ "${#changed_files[@]}" -eq 0 ]; then
+            echo "No changed workflow/action.yml files, nothing to sync."
+            exit 0
+          fi
+
+          extract_uses() {
+            # $1: git ref ("BASE" for the base commit, or empty for the working tree)
+            local ref="$1" file
+            for file in "${changed_files[@]}"; do
+              if [ "$ref" = "BASE" ]; then
+                git show "$BASE_REF:$file" 2>/dev/null || true
+              else
+                cat "$file" 2>/dev/null || true
+              fi
+            done | grep -oE 'uses:[[:space:]]*[A-Za-z0-9._-]+/[A-Za-z0-9._/-]+@[A-Za-z0-9._-]+' \
+                 | sed -E 's/uses:[[:space:]]*//'
+          }
+
+          # key<TAB>version pairs, deduplicated (last occurrence per key wins, they
+          # should all agree within a single ref anyway).
+          extract_uses BASE | awk -F'@' '{ print $1"\t"$2 }' | sort -u > /tmp/base-uses.tsv
+          extract_uses HEAD | awk -F'@' '{ print $1"\t"$2 }' | sort -u > /tmp/head-uses.tsv
+
+          bumps_file=/tmp/bumps.tsv
+          : > "$bumps_file"
+          join -t $'\t' -j1 /tmp/base-uses.tsv /tmp/head-uses.tsv 2>/dev/null | \
+            awk -F'\t' '$2 != $3 { print $1"\t"$2"\t"$3 }' >> "$bumps_file" || true
+
+          if [ ! -s "$bumps_file" ]; then
+            echo "No action version bumps detected, nothing to sync."
+            exit 0
+          fi
+
+          echo "Detected version bumps:"
+          cat "$bumps_file"
+
+          mapfile -t md_files < <(git ls-files '*.md')
+
+          while IFS=$'\t' read -r key old new; do
+            [ -z "$key" ] && continue
+            escaped_key=$(printf '%s' "$key" | sed -E 's/\./\\./g')
+            for md in "${md_files[@]}"; do
+              sed -i -E "s#(uses:[[:space:]]*${escaped_key}@)[A-Za-z0-9._-]+#\1${new}#g" "$md"
+            done
+          done < "$bumps_file"
+
+      - name: Commit and push doc updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- '*.md'
+          if git diff --cached --quiet; then
+            echo "No README changes needed."
+          else
+            git commit -m "[Auto] Sync action version references in READMEs"
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          fi
