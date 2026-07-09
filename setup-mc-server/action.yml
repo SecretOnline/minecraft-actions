@@ -28,9 +28,6 @@ inputs:
       NeoForge version to use when loader is "neoforge". If not supplied, falls back to
       the latest stable version for the resolved Minecraft version.
     required: false
-  user-agent:
-    description: User-Agent string for HTTP requests.
-    required: true
   server-directory:
     description: Directory to install the server into.
     required: false

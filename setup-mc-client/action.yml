@@ -18,9 +18,6 @@ inputs:
   minecraft-version:
     description: Minecraft version to run. If not supplied, falls back to latest release.
     required: false
-  user-agent:
-    description: User-Agent string for HTTP requests.
-    required: true
   client-directory:
     description: Directory to install the client into.
     required: false

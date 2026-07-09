@@ -10,16 +10,8 @@ Linux runners only. There is no way to pin a specific packwiz version — the ni
 steps:
   - uses: SecretOnline/minecraft-actions/setup-packwiz@main
     id: packwiz
-    with:
-      user-agent: your-name/your-mod (contact@example.com)
   - run: ${{ steps.packwiz.outputs.packwiz-path }} refresh
 ```
-
-## Inputs
-
-| Name | Required | Default | Description |
-| --- | --- | --- | --- |
-| `user-agent` | Yes | | User-Agent string for HTTP requests. |
 
 ## Outputs
 

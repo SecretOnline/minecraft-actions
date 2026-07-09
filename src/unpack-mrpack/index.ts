@@ -11,11 +11,12 @@ import {
   type MrpackEnvironment,
   overridesDirName,
 } from "../lib/mrpack.js";
+import { resolveUserAgent } from "../lib/userAgent.js";
 
 async function run(): Promise<void> {
   const mrpackFile = core.getInput("mrpack-file", { required: true });
   const minecraftDirectory = core.getInput("minecraft-directory", { required: true });
-  const userAgent = core.getInput("user-agent", { required: true });
+  const userAgent = resolveUserAgent("unpack-mrpack");
   const environment = (core.getInput("environment") || "client") as MrpackEnvironment;
   const concurrency = Number(core.getInput("download-concurrency") || "8");
 

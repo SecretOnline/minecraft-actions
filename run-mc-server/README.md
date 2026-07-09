@@ -8,7 +8,6 @@ Starts a Minecraft server (installed by [setup-mc-server](../setup-mc-server)) i
 steps:
   - uses: SecretOnline/minecraft-actions/setup-mc-server@main
     with:
-      user-agent: your-name/your-mod (contact@example.com)
       accept-eula: "true"
   - uses: SecretOnline/minecraft-actions/run-mc-server@main
     id: run

@@ -2,6 +2,7 @@ import * as core from "@actions/core";
 import { readGradleProperty } from "../lib/gradleProperties.js";
 import { fetchVersionManifest, getJavaVersionForMcVersion } from "../lib/mojang.js";
 import { parseMavenRange, versionMatchesRange } from "../lib/versionRange.js";
+import { resolveUserAgent } from "../lib/userAgent.js";
 
 interface MatrixEntry {
   name: string;
@@ -10,7 +11,7 @@ interface MatrixEntry {
 }
 
 async function run(): Promise<void> {
-  const userAgent = core.getInput("user-agent", { required: true });
+  const userAgent = resolveUserAgent("get-test-matrix");
   const gradlePropertiesPath = core.getInput("gradle-properties") || "gradle.properties";
 
   const mcVersion = readGradleProperty(gradlePropertiesPath, "minecraft_version");

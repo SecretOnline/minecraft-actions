@@ -5,13 +5,14 @@ import { downloadAssets, downloadLibraries } from "../lib/clientDownload.js";
 import { buildClientOptions } from "../lib/clientOptions.js";
 import { downloadToFile, verifySha1 } from "../lib/download.js";
 import { fetchVersionManifest, getFullVersionData } from "../lib/mojang.js";
+import { resolveUserAgent } from "../lib/userAgent.js";
 import { setupFabric } from "./loaders/fabric.js";
 import { setupNeoForge } from "./loaders/neoforge.js";
 import { type ClientBuildState, type ClientLoaderContext, applyLoaderResult } from "./loaders/types.js";
 import { setupVanillaClient } from "./loaders/vanilla.js";
 
 async function run(): Promise<void> {
-  const userAgent = core.getInput("user-agent", { required: true });
+  const userAgent = resolveUserAgent("setup-mc-client");
   const inputMcVersion = core.getInput("minecraft-version");
   const clientDirectory = core.getInput("client-directory") || ".";
   const assetStrategy = core.getInput("asset-download-strategy") || "full";

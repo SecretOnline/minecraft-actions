@@ -21,7 +21,6 @@ steps:
     with:
       minecraft-version: "26.1"
       loader: fabric
-      user-agent: your-name/your-mod (contact@example.com)
 ```
 
 ## Inputs
@@ -29,7 +28,6 @@ steps:
 | Name | Required | Default | Description |
 | --- | --- | --- | --- |
 | `minecraft-version` | No | Latest release | Minecraft version to run. |
-| `user-agent` | Yes | | User-Agent string for HTTP requests. |
 | `client-directory` | No | `.` | Directory to install the client into. |
 | `loader` | No | `vanilla` | Client type to install. One of `vanilla`, `fabric`, or `neoforge`. |
 | `fabric-loader-version` | No | Latest stable | Fabric Loader version to use when `loader` is `fabric`. |

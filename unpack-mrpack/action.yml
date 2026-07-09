@@ -12,9 +12,6 @@ inputs:
   minecraft-directory:
     description: Directory to unpack the pack into.
     required: true
-  user-agent:
-    description: User-Agent string for HTTP requests.
-    required: true
   environment:
     description: Environment to unpack for. (client or server)
     default: client

@@ -57,7 +57,6 @@ jobs:
         id: test-matrix
         uses: ./get-test-matrix
         with:
-          user-agent: minecraft-actions-ci
           gradle-properties: test/fixtures/gradle.properties
 
       - name: Check get-test-matrix output (1.x scheme)
@@ -68,7 +67,6 @@ jobs:
         id: test-matrix-new-scheme
         uses: ./get-test-matrix
         with:
-          user-agent: minecraft-actions-ci
           gradle-properties: test/fixtures/gradle-new-scheme.properties
 
       - name: Check get-test-matrix output (new scheme, w/ patch)
@@ -79,7 +77,6 @@ jobs:
         id: test-matrix-new-scheme-no-patch
         uses: ./get-test-matrix
         with:
-          user-agent: minecraft-actions-ci
           gradle-properties: test/fixtures/gradle-new-scheme-no-patch.properties
 
       - name: Check get-test-matrix output (new scheme, no patch)
@@ -91,7 +88,6 @@ jobs:
         uses: ./get-update-versions
         with:
           minecraft-version: 1.21.4
-          user-agent: minecraft-actions-ci
 
       - name: Check get-update-versions outputs (1.x scheme)
         run: |
@@ -105,7 +101,6 @@ jobs:
         uses: ./get-update-versions
         with:
           minecraft-version: 26.1.2
-          user-agent: minecraft-actions-ci
 
       - name: Check get-update-versions outputs (new scheme, w/ patch)
         run: |
@@ -119,7 +114,6 @@ jobs:
         uses: ./get-update-versions
         with:
           minecraft-version: 26.2
-          user-agent: minecraft-actions-ci
 
       - name: Check get-update-versions outputs (new scheme, no patch)
         run: |
@@ -155,8 +149,6 @@ jobs:
       - name: Resolve latest Minecraft version for server smoke test
         id: mc-versions
         uses: ./get-update-versions
-        with:
-          user-agent: minecraft-actions-ci
 
       - name: Set up JDK for Minecraft server
         uses: actions/setup-java@v4
@@ -170,7 +162,6 @@ jobs:
         with:
           minecraft-version: ${{ steps.mc-versions.outputs.minecraft-version }}
           loader: ${{ matrix.loader }}
-          user-agent: minecraft-actions-ci
           server-directory: mc-server
           accept-eula: "true"
           server-properties: |
@@ -227,8 +218,6 @@ jobs:
       - name: Resolve latest Minecraft version for client smoke test
         id: mc-versions
         uses: ./get-update-versions
-        with:
-          user-agent: minecraft-actions-ci
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -245,7 +234,6 @@ jobs:
         with:
           minecraft-version: ${{ steps.mc-versions.outputs.minecraft-version }}
           loader: vanilla
-          user-agent: minecraft-actions-ci
           server-directory: mc-server
           accept-eula: "true"
           server-properties: |
@@ -265,7 +253,6 @@ jobs:
         with:
           minecraft-version: ${{ steps.mc-versions.outputs.minecraft-version }}
           loader: ${{ matrix.loader }}
-          user-agent: minecraft-actions-ci
           client-directory: mc-client
 
       - name: Check setup-mc-client Fabric outputs
@@ -308,8 +295,6 @@ jobs:
       - name: Set up Packwiz
         id: setup-packwiz
         uses: ./setup-packwiz
-        with:
-          user-agent: minecraft-actions-ci
 
       - name: Check setup-packwiz output and binary
         run: |
@@ -319,8 +304,6 @@ jobs:
       - name: Set up Packwiz again (exercise tool-cache/repeat-install path)
         id: setup-packwiz-again
         uses: ./setup-packwiz
-        with:
-          user-agent: minecraft-actions-ci
 
       - name: Check setup-packwiz output and binary (second run)
         run: |
@@ -348,7 +331,6 @@ jobs:
         with:
           mrpack-file: test/fixtures/example.mrpack
           minecraft-directory: mc-instance-${{ matrix.environment }}
-          user-agent: minecraft-actions-ci
           environment: ${{ matrix.environment }}
 
       - name: Check outputs and unpacked files

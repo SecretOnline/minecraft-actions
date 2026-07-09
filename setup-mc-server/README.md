@@ -17,7 +17,6 @@ steps:
     with:
       minecraft-version: "26.1"
       loader: neoforge
-      user-agent: your-name/your-mod (contact@example.com)
       accept-eula: "true"
 ```
 
@@ -30,7 +29,6 @@ steps:
 | `fabric-loader-version` | No | Latest stable | Fabric Loader version to use when `loader` is `fabric`. |
 | `fabric-installer-version` | No | Latest stable | Fabric Installer version to use when `loader` is `fabric`. |
 | `neoforge-version` | No | Latest stable for the resolved Minecraft version | NeoForge version to use when `loader` is `neoforge`. |
-| `user-agent` | Yes | | User-Agent string for HTTP requests. |
 | `server-directory` | No | `.` | Directory to install the server into. |
 | `accept-eula` | Yes | | Must be `"true"` to acknowledge the [Minecraft EULA](https://aka.ms/MinecraftEULA) on the user's behalf. |
 | `server-properties` | No | | Extra `server.properties` lines (`key=value`, one per line) to apply on top of the CI-friendly defaults (`online-mode=false`, `white-list=false`, `enable-rcon=true`). |

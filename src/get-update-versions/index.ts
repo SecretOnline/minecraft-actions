@@ -2,6 +2,7 @@ import * as core from "@actions/core";
 import { fetchVersionManifest, findVersionEntry } from "../lib/mojang.js";
 import { deriveNeoForgePrefix } from "../lib/neoforge.js";
 import { compareVersions } from "../lib/versionRange.js";
+import { resolveUserAgent } from "../lib/userAgent.js";
 
 async function fetchText(url: string, userAgent: string): Promise<string> {
   const response = await fetch(url, { headers: { "User-Agent": userAgent } });
@@ -29,7 +30,7 @@ interface NeoforgedVersions {
 }
 
 async function run(): Promise<void> {
-  const userAgent = core.getInput("user-agent", { required: true });
+  const userAgent = resolveUserAgent("get-update-versions");
   const inputMcVersion = core.getInput("minecraft-version");
 
   core.startGroup("Minecraft version");

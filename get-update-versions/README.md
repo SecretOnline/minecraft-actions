@@ -10,7 +10,6 @@ If no Minecraft version is provided, it defaults to the latest release from the 
 - uses: SecretOnline/minecraft-actions/get-update-versions@main
   id: versions
   with:
-    user-agent: your-name/your-mod (contact@example.com)
     minecraft-version: "26.1-snapshot-6"
 
 - run: |
@@ -24,7 +23,6 @@ If no Minecraft version is provided, it defaults to the latest release from the 
 
 | Name | Required | Default | Description |
 | --- | --- | --- | --- |
-| `user-agent` | Yes | | User-Agent string for HTTP requests. |
 | `minecraft-version` | No | Latest release | Minecraft version to look up. |
 | `gradle-properties` | No | `gradle.properties` | Path to the gradle.properties file. |
 

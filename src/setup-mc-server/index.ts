@@ -4,6 +4,7 @@ import { join } from "node:path";
 import * as core from "@actions/core";
 import { fetchVersionManifest } from "../lib/mojang.js";
 import { buildServerProperties } from "../lib/serverProperties.js";
+import { resolveUserAgent } from "../lib/userAgent.js";
 import { setupFabricServer } from "./loaders/fabric.js";
 import { setupNeoForgeServer } from "./loaders/neoforge.js";
 import type { ServerLoaderContext } from "./loaders/types.js";
@@ -16,7 +17,7 @@ const loaders = {
 } as const satisfies Record<string, (ctx: ServerLoaderContext) => Promise<void>>;
 
 async function run(): Promise<void> {
-  const userAgent = core.getInput("user-agent", { required: true });
+  const userAgent = resolveUserAgent("setup-mc-server");
   const inputMcVersion = core.getInput("minecraft-version");
   const serverDirectory = core.getInput("server-directory") || ".";
   const acceptEula = core.getInput("accept-eula", { required: true });

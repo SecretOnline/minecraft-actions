@@ -11,7 +11,6 @@ steps:
     with:
       mrpack-file: modpack.mrpack
       minecraft-directory: mc-server
-      user-agent: your-name/your-mod (contact@example.com)
       environment: server
 ```
 
@@ -21,7 +20,6 @@ steps:
 | --- | --- | --- | --- |
 | `mrpack-file` | Yes | | Path to the .mrpack file to unpack. |
 | `minecraft-directory` | Yes | | Directory to unpack the pack into. |
-| `user-agent` | Yes | | User-Agent string for HTTP requests. |
 | `environment` | No | `client` | Environment to unpack for (`client` or `server`). |
 | `download-concurrency` | No | `8` | Number of pack files to download in parallel. |
 

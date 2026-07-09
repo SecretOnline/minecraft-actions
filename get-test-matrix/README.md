@@ -16,8 +16,6 @@ jobs:
       - uses: actions/checkout@v6
       - uses: SecretOnline/minecraft-actions/get-test-matrix@main
         id: matrix
-        with:
-          user-agent: your-name/your-mod (contact@example.com)
 
   test:
     needs: get-matrix
@@ -32,7 +30,6 @@ jobs:
 
 | Name | Required | Default | Description |
 | --- | --- | --- | --- |
-| `user-agent` | Yes | | User-Agent string for HTTP requests. |
 | `gradle-properties` | No | `gradle.properties` | Path to the gradle.properties file. |
 
 ## Outputs

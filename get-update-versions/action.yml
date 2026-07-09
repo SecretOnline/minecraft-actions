@@ -5,9 +5,6 @@ inputs:
   minecraft-version:
     description: Minecraft version to update to. If not supplied, falls back to latest release.
     required: false
-  user-agent:
-    description: User-Agent string for HTTP requests.
-    required: true
   gradle-properties:
     description: Path to the gradle.properties file.
     required: false

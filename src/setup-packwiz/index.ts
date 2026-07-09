@@ -10,9 +10,10 @@ import {
   resolveGobinDir,
   tryDownloadNightlyLink,
 } from "../lib/packwiz.js";
+import { resolveUserAgent } from "../lib/userAgent.js";
 
 async function run(): Promise<void> {
-  const userAgent = core.getInput("user-agent", { required: true });
+  const userAgent = resolveUserAgent("setup-packwiz");
 
   const scratchDir = join(process.env.RUNNER_TEMP || tmpdir(), "setup-packwiz");
   mkdirSync(scratchDir, { recursive: true });

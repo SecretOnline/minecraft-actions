@@ -10,8 +10,6 @@ The runner must already have `xvfb` installed (e.g. `apt-get install -y xvfb`) b
 steps:
   - run: sudo apt-get update && sudo apt-get install -y xvfb
   - uses: SecretOnline/minecraft-actions/setup-mc-client@main
-    with:
-      user-agent: your-name/your-mod (contact@example.com)
   - uses: SecretOnline/minecraft-actions/run-mc-client@main
     id: run
     with:
