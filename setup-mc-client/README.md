@@ -1,0 +1,48 @@
+# Setup Minecraft client
+
+Downloads a Minecraft Java Edition client (vanilla, Fabric, or NeoForge — jar, libraries, assets, log4j config) and writes a `launch-config.json` describing how to launch it, ready to be started by the [run-mc-client](../run-mc-client) action.
+
+This client is only ever intended to join a singleplayer world it owns or a server with `online-mode=false` (like this repo's own `setup-mc-server` default) — there is no real Microsoft/Xbox authentication here, just fabricated offline-mode credentials supplied at `run-mc-client` time.
+
+Libraries and assets are cached across runs via `actions/cache` (keyed by Minecraft version+loader / asset index id respectively) since assets in particular can be several hundred MB; a cache miss falls back to downloading, so this works fine on the first run or if the cache is unavailable (e.g. local `act` runs without `--cache-server-path`).
+
+When `loader` is `neoforge`, this runs the real NeoForge installer with `java`, so a JDK must already be on PATH (e.g. via `actions/setup-java`) before this action runs.
+
+## Usage
+
+```yaml
+steps:
+  - uses: actions/setup-java@v4
+    with:
+      distribution: temurin
+      java-version: "25"
+  - uses: SecretOnline/minecraft-actions/setup-mc-client@main
+    id: client
+    with:
+      minecraft-version: "26.1"
+      loader: fabric
+      user-agent: your-name/your-mod (contact@example.com)
+```
+
+## Inputs
+
+| Name | Required | Default | Description |
+| --- | --- | --- | --- |
+| `minecraft-version` | No | Latest release | Minecraft version to run. |
+| `user-agent` | Yes | | User-Agent string for HTTP requests. |
+| `client-directory` | No | `.` | Directory to install the client into. |
+| `loader` | No | `vanilla` | Client type to install. One of `vanilla`, `fabric`, or `neoforge`. |
+| `fabric-loader-version` | No | Latest stable | Fabric Loader version to use when `loader` is `fabric`. |
+| `neoforge-version` | No | Latest stable for the resolved Minecraft version | NeoForge version to use when `loader` is `neoforge`. |
+| `asset-download-strategy` | No | `full` | `full` downloads every asset object referenced by the version's asset index (matches the real launcher; can be several hundred MB but is the safe default). `skip` downloads only the asset index and none of the objects, for faster CI — experimental, unverified whether the client tolerates an empty `assets/objects` directory. |
+| `download-concurrency` | No | `8` | Maximum number of libraries/asset objects to download in parallel. |
+| `client-options` | No | | Extra `options.txt` lines (`key:value`, one per line — note the colon, unlike `server.properties`' `=`) to apply on top of the defaults that skip first-launch UI (`skipMultiplayerWarning:true`, `onboardAccessibility:false`, `joinedFirstServer:true`, `tutorialStep:none`) which would otherwise block a headless client from ever reaching a joinable state. |
+
+## Outputs
+
+| Name | Description |
+| --- | --- |
+| `client-directory` | Directory the client was installed into. |
+| `minecraft-version` | The resolved Minecraft version. |
+| `fabric-loader-version` | The resolved Fabric Loader version (only set when `loader` is `fabric`). |
+| `neoforge-version` | The resolved NeoForge version (only set when `loader` is `neoforge`). |
