@@ -6,7 +6,7 @@ Resolves the Java version from the `java-version` input or `gradle.properties`. 
 
 ```yaml
 steps:
-  - uses: SecretOnline/minecraft-actions/setup-mod-gradle/resolve-java@main
+  - uses: SecretOnline/minecraft-actions/setup-mod-gradle/resolve-java@v2
     id: java
   - run: echo "Resolved Java ${{ steps.java.outputs.java-version }}"
 ```

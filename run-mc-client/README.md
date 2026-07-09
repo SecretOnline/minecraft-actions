@@ -9,8 +9,8 @@ The runner must already have `xvfb` installed (e.g. `apt-get install -y xvfb`) b
 ```yaml
 steps:
   - run: sudo apt-get update && sudo apt-get install -y xvfb
-  - uses: SecretOnline/minecraft-actions/setup-mc-client@main
-  - uses: SecretOnline/minecraft-actions/run-mc-client@main
+  - uses: SecretOnline/minecraft-actions/setup-mc-client@v2
+  - uses: SecretOnline/minecraft-actions/run-mc-client@v2
     id: run
     with:
       server-address: localhost:25565

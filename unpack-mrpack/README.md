@@ -6,7 +6,7 @@ Unpacks a Modrinth modpack (`.mrpack`) into a Minecraft instance directory. Down
 
 ```yaml
 steps:
-  - uses: SecretOnline/minecraft-actions/unpack-mrpack@main
+  - uses: SecretOnline/minecraft-actions/unpack-mrpack@v2
     id: unpack
     with:
       mrpack-file: modpack.mrpack

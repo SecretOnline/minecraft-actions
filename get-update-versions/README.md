@@ -7,7 +7,7 @@ If no Minecraft version is provided, it defaults to the latest release from the 
 ## Usage
 
 ```yaml
-- uses: SecretOnline/minecraft-actions/get-update-versions@main
+- uses: SecretOnline/minecraft-actions/get-update-versions@v2
   id: versions
   with:
     minecraft-version: "26.1-snapshot-6"

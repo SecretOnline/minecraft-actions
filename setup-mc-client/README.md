@@ -16,7 +16,7 @@ steps:
     with:
       distribution: temurin
       java-version: "25"
-  - uses: SecretOnline/minecraft-actions/setup-mc-client@main
+  - uses: SecretOnline/minecraft-actions/setup-mc-client@v2
     id: client
     with:
       minecraft-version: "26.1"

@@ -6,10 +6,10 @@ Starts a Minecraft server (installed by [setup-mc-server](../setup-mc-server)) i
 
 ```yaml
 steps:
-  - uses: SecretOnline/minecraft-actions/setup-mc-server@main
+  - uses: SecretOnline/minecraft-actions/setup-mc-server@v2
     with:
       accept-eula: "true"
-  - uses: SecretOnline/minecraft-actions/run-mc-server@main
+  - uses: SecretOnline/minecraft-actions/run-mc-server@v2
     id: run
     with:
       log-file: server.log

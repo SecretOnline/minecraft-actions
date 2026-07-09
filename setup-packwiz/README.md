@@ -8,7 +8,7 @@ Linux runners only. There is no way to pin a specific packwiz version — the ni
 
 ```yaml
 steps:
-  - uses: SecretOnline/minecraft-actions/setup-packwiz@main
+  - uses: SecretOnline/minecraft-actions/setup-packwiz@v2
     id: packwiz
   - run: ${{ steps.packwiz.outputs.packwiz-path }} refresh
 ```

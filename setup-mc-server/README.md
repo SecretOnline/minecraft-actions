@@ -12,7 +12,7 @@ steps:
     with:
       distribution: temurin
       java-version: "25"
-  - uses: SecretOnline/minecraft-actions/setup-mc-server@main
+  - uses: SecretOnline/minecraft-actions/setup-mc-server@v2
     id: server
     with:
       minecraft-version: "26.1"
