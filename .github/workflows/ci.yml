@@ -40,6 +40,7 @@ jobs:
             setup-mc-client/dist
             run-mc-client/dist
             setup-packwiz/dist
+            unpack-mrpack/dist
 
   test-version-actions:
     needs: build
@@ -325,3 +326,45 @@ jobs:
         run: |
           test -n "${{ steps.setup-packwiz-again.outputs.packwiz-path }}"
           packwiz --help
+
+  test-unpack-mrpack:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [client, server]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: .
+
+      - name: Unpack fixture mrpack
+        id: unpack
+        uses: ./unpack-mrpack
+        with:
+          mrpack-file: test/fixtures/example.mrpack
+          minecraft-directory: mc-instance-${{ matrix.environment }}
+          user-agent: minecraft-actions-ci
+          environment: ${{ matrix.environment }}
+
+      - name: Check outputs and unpacked files
+        run: |
+          test "${{ steps.unpack.outputs.minecraft-directory }}" = "mc-instance-${{ matrix.environment }}"
+          test "${{ steps.unpack.outputs.minecraft-version }}" = "1.21.4"
+          test -f "mc-instance-${{ matrix.environment }}/mods/shared-mod.txt"
+          test -f "mc-instance-${{ matrix.environment }}/config/base.txt"
+          test -f "mc-instance-${{ matrix.environment }}/config/${{ matrix.environment }}-only.txt"
+
+      - name: Check environment-specific file is skipped on the client
+        if: matrix.environment == 'client'
+        run: |
+          test ! -f "mc-instance-client/mods/server-mod.txt"
+
+      - name: Check environment-specific file is downloaded on the server
+        if: matrix.environment == 'server'
+        run: |
+          test -f "mc-instance-server/mods/server-mod.txt"
