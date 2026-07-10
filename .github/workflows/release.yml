@@ -66,8 +66,11 @@ jobs:
           git checkout --orphan release-staging
           git rm -rf .
 
-          # Restore root README and .gitignore
-          git restore --source="$source_sha" -- README.md .gitignore
+          # Restore root README
+          git restore --source="$source_sha" -- README.md
+
+          # Create .gitignore
+          echo "node_modules/" > .gitignore
 
           source_note=$(printf '> [!NOTE]\n> This release was generated from [`%s`](https://github.com/%s/commit/%s).' "$source_sha" "$GITHUB_REPOSITORY" "$source_sha")
 

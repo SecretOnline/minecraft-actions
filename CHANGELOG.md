@@ -16,6 +16,12 @@ The versioning scheme is listed in the README.
 
 ## Unreleased - DATE
 
+## v2.0.1 - 2023-07-10
+
+### Fixed
+
+- Broken actions due to bug in release workflow.
+
 ## v2.0.0 - 2023-07-10
 
 Nearly 3 years later and I'm back in this repo.
