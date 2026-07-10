@@ -1,14 +1,28 @@
 import { spawnSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 
 export const NIGHTLY_LINK_URL = "https://nightly.link/packwiz/packwiz/workflows/go/main/Linux%2064-bit%20x86.zip";
 export const PACKWIZ_TOOL_NAME = "packwiz";
 export const PACKWIZ_SOURCE_BUILD_VERSION = "0.0.0-source";
+export const PACKWIZ_CACHE_KEY_PREFIX = "packwiz-download-cache-";
 
 export function resolveGobinDir(): string {
   return join(process.env.RUNNER_TEMP || tmpdir(), "packwiz-gobin");
+}
+
+/**
+ * packwiz's own default download cache location (core.GetPackwizCache() ->
+ * GetPackwizLocalCache(), unless overridden by a "cache.directory" config value packwiz
+ * users would set themselves): os.UserCacheDir()/packwiz/cache, i.e.
+ * $XDG_CACHE_HOME/packwiz/cache or ~/.cache/packwiz/cache on Linux. Mirrored here (rather
+ * than read from packwiz itself, which isn't installed yet when this runs) so it can be
+ * restored/saved via actions/cache around packwiz commands in later steps.
+ */
+export function resolvePackwizCacheDir(): string {
+  const base = process.env.XDG_CACHE_HOME || join(homedir(), ".cache");
+  return join(base, "packwiz", "cache");
 }
 
 export function buildGoInstallEnv(gobinDir: string): NodeJS.ProcessEnv {

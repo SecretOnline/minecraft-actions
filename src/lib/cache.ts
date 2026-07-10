@@ -8,10 +8,10 @@ import * as core from "@actions/core";
  * never "broken" (the download loops already skip-if-present by file size regardless
  * of how a file got there).
  */
-export async function tryRestoreCache(paths: string[], key: string): Promise<boolean> {
+export async function tryRestoreCache(paths: string[], key: string, restoreKeys?: string[]): Promise<boolean> {
   try {
-    const restored = await cache.restoreCache(paths, key);
-    core.info(restored ? `Cache hit for key "${key}"` : `Cache miss for key "${key}"`);
+    const restored = await cache.restoreCache(paths, key, restoreKeys);
+    core.info(restored ? `Cache hit for key "${restored}"` : `Cache miss for key "${key}"`);
     return restored !== undefined;
   } catch (error) {
     core.warning(`Cache restore failed, continuing without it: ${error instanceof Error ? error.message : String(error)}`);

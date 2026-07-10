@@ -6,7 +6,10 @@ description: >-
   (requires Go already on PATH, e.g. via actions/setup-go), caching that build for future
   runs. Linux runners only. There is no way to pin a specific packwiz version - the
   nightly.link artifact always reflects packwiz's main branch, and the source-build
-  fallback always builds @latest.
+  fallback always builds @latest. Also restores/saves packwiz's own download cache
+  (~/.cache/packwiz/cache, where it keeps previously-downloaded mod files) around your
+  later packwiz steps, so a job that re-downloads the same mods doesn't re-fetch them
+  from CurseForge/Modrinth every run.
 
 outputs:
   packwiz-path:
@@ -15,3 +18,4 @@ outputs:
 runs:
   using: node24
   main: dist/index.js
+  post: dist/index.js

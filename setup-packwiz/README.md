@@ -4,6 +4,8 @@ Installs the [Packwiz](https://github.com/packwiz/packwiz) CLI onto PATH. Tries 
 
 Linux runners only. There is no way to pin a specific packwiz version — the nightly.link artifact always reflects packwiz's main branch, and the source-build fallback always builds `@latest`.
 
+Also restores/saves packwiz's own download cache (`~/.cache/packwiz/cache`, where it keeps previously-downloaded mod files) around your later packwiz steps in the same job, so re-downloading the same mods doesn't re-fetch them from CurseForge/Modrinth every run.
+
 ## Usage
 
 ```yaml

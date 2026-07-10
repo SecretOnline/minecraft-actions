@@ -1,12 +1,14 @@
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   buildGoInstallEnv,
   NIGHTLY_LINK_URL,
+  PACKWIZ_CACHE_KEY_PREFIX,
   PACKWIZ_SOURCE_BUILD_VERSION,
   PACKWIZ_TOOL_NAME,
   resolveGobinDir,
+  resolvePackwizCacheDir,
 } from "../src/lib/packwiz.js";
 
 describe("constants", () => {
@@ -17,6 +19,32 @@ describe("constants", () => {
   it("has the expected tool name and source-build version", () => {
     expect(PACKWIZ_TOOL_NAME).toBe("packwiz");
     expect(PACKWIZ_SOURCE_BUILD_VERSION).toBe("0.0.0-source");
+  });
+
+  it("has the expected cache key prefix", () => {
+    expect(PACKWIZ_CACHE_KEY_PREFIX).toBe("packwiz-download-cache-");
+  });
+});
+
+describe("resolvePackwizCacheDir", () => {
+  const originalXdgCacheHome = process.env.XDG_CACHE_HOME;
+
+  afterEach(() => {
+    if (originalXdgCacheHome === undefined) {
+      delete process.env.XDG_CACHE_HOME;
+    } else {
+      process.env.XDG_CACHE_HOME = originalXdgCacheHome;
+    }
+  });
+
+  it("uses XDG_CACHE_HOME when set", () => {
+    process.env.XDG_CACHE_HOME = "/xdg/cache";
+    expect(resolvePackwizCacheDir()).toBe(join("/xdg/cache", "packwiz", "cache"));
+  });
+
+  it("falls back to ~/.cache when XDG_CACHE_HOME is unset", () => {
+    delete process.env.XDG_CACHE_HOME;
+    expect(resolvePackwizCacheDir()).toBe(join(homedir(), ".cache", "packwiz", "cache"));
   });
 });
 

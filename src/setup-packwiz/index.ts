@@ -3,16 +3,38 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as core from "@actions/core";
 import * as tc from "@actions/tool-cache";
+import { tryRestoreCache, trySaveCache } from "../lib/cache.js";
 import {
   installPackwizFromSource,
+  PACKWIZ_CACHE_KEY_PREFIX,
   PACKWIZ_SOURCE_BUILD_VERSION,
   PACKWIZ_TOOL_NAME,
   resolveGobinDir,
+  resolvePackwizCacheDir,
   tryDownloadNightlyLink,
 } from "../lib/packwiz.js";
 import { resolveUserAgent } from "../lib/userAgent.js";
 
-async function run(): Promise<void> {
+/**
+ * The cache is saved in a post step rather than here, since packwiz's cache directory
+ * only fills up once the user's own later steps actually run packwiz commands (this
+ * action only installs the binary).
+ */
+async function restorePackwizCache(): Promise<void> {
+  const cacheDir = resolvePackwizCacheDir();
+  mkdirSync(cacheDir, { recursive: true });
+  core.startGroup("Restoring packwiz download cache");
+  await tryRestoreCache([cacheDir], `${PACKWIZ_CACHE_KEY_PREFIX}${process.env.GITHUB_RUN_ID}`, [PACKWIZ_CACHE_KEY_PREFIX]);
+  core.endGroup();
+}
+
+async function savePackwizCache(): Promise<void> {
+  core.startGroup("Saving packwiz download cache");
+  await trySaveCache([resolvePackwizCacheDir()], `${PACKWIZ_CACHE_KEY_PREFIX}${process.env.GITHUB_RUN_ID}`);
+  core.endGroup();
+}
+
+async function install(): Promise<void> {
   const userAgent = resolveUserAgent("setup-packwiz");
 
   const scratchDir = join(process.env.RUNNER_TEMP || tmpdir(), "setup-packwiz");
@@ -59,6 +81,16 @@ async function run(): Promise<void> {
 
   core.addPath(binDir);
   core.setOutput("packwiz-path", join(binDir, "packwiz"));
+}
+
+async function run(): Promise<void> {
+  if (core.getState("isPost")) {
+    await savePackwizCache();
+    return;
+  }
+  core.saveState("isPost", "true");
+  await restorePackwizCache();
+  await install();
 }
 
 run().catch((error: unknown) => {
