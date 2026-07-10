@@ -11,6 +11,7 @@ on:
 
 jobs:
   release:
+    name: Release
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ inputs.version }}
@@ -65,8 +66,8 @@ jobs:
           git checkout --orphan release-staging
           git rm -rf .
 
-          # Restore root README
-          git restore --source="$source_sha" -- README.md
+          # Restore root README and .gitignore
+          git restore --source="$source_sha" -- README.md .gitignore
 
           source_note=$(printf '> [!NOTE]\n> This release was generated from [`%s`](https://github.com/%s/commit/%s).' "$source_sha" "$GITHUB_REPOSITORY" "$source_sha")
 
