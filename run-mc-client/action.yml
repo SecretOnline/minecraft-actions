@@ -1,0 +1,70 @@
+name: Run Minecraft client
+description: >-
+  Starts a Minecraft client (installed by setup-mc-client) headless under xvfb-run,
+  auto-joining a singleplayer world or a multiplayer server, and waits for it to become
+  ready, failing fast if it crashes first. Stops it (SIGTERM, then SIGKILL after a
+  timeout) in a post step once the job's later steps have finished. The runner must
+  already have xvfb installed (e.g. `apt-get install -y xvfb`) before this action runs -
+  it does not install system packages on your behalf.
+
+inputs:
+  client-directory:
+    description: Directory the client was installed into by setup-mc-client.
+    required: false
+    default: "."
+  username:
+    description: >-
+      Offline-mode player name to launch as. Fabricated - there is no real Microsoft/Xbox
+      account behind this, so it only works for singleplayer or a server with
+      online-mode=false.
+    required: false
+    default: Player
+  singleplayer-world:
+    description: >-
+      Name of a singleplayer world (folder name under client-directory/saves) to
+      auto-join on launch. Mutually exclusive with server-address. Behavior when the
+      named world does not already exist is unverified - it may auto-create a new world
+      or it may fail; this hasn't been confirmed against a real client yet.
+    required: false
+  server-address:
+    description: >-
+      "host:port" of a multiplayer server to auto-join on launch (typically one started
+      via setup-mc-server/run-mc-server in the same job). Mutually exclusive with
+      singleplayer-world.
+    required: false
+  java-args:
+    description: Extra JVM arguments (e.g. -Xmx2G), appended directly to the java invocation.
+    required: false
+  width:
+    description: Window width. Only takes effect if height is also set.
+    required: false
+  height:
+    description: Window height. Only takes effect if width is also set.
+    required: false
+  ready-pattern:
+    description: >-
+      Substring to look for in the client log that indicates it is ready. Defaults to
+      "advancements" (from the "Loaded N advancements" line logged right after joining
+      a world - the count varies per world, hence matching just the word), confirmed
+      against a real client log. Not yet confirmed on non-vanilla loaders (e.g.
+      NeoForge), which may need a different pattern once that's added.
+    required: false
+    default: "advancements"
+  timeout-seconds:
+    description: How long to wait for the client to become ready before failing.
+    required: false
+    default: "120"
+  log-file:
+    description: Path to redirect the client's stdout/stderr to.
+    required: false
+
+outputs:
+  pid:
+    description: Process ID of the running client (the xvfb-run wrapper process)
+  log-file:
+    description: Path the client's stdout/stderr was redirected to
+
+runs:
+  using: node24
+  main: dist/index.js
+  post: dist/index.js
