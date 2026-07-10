@@ -45,7 +45,7 @@ jobs:
       - name: Update .node-version
         run: echo "v${{ steps.node-version.outputs.latest }}" > .node-version
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version-file: .node-version
 
