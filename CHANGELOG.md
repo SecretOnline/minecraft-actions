@@ -16,6 +16,13 @@ The versioning scheme is listed in the README.
 
 ## Unreleased - DATE
 
+## v2.0.2 - 2023-07-10
+
+### Fixed
+
+- `setup-mod-gradle` action not being able to resolve script.
+  - Fixed by reverting it back to Bash.
+
 ## v2.0.1 - 2023-07-10
 
 ### Fixed
