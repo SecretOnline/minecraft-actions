@@ -5,7 +5,7 @@ import {
   fetchFabricInstallerVersions,
   fetchFabricLoaderVersions,
   findLatestStableFabricVersion,
-} from "../../lib/fabric.js";
+} from "../../lib/loaders/fabric.js";
 import type { ServerLoaderContext } from "./types.js";
 
 export async function setupFabricServer(ctx: ServerLoaderContext): Promise<void> {

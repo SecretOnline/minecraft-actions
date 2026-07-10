@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parsePackwizUpdateLine } from "../src/lib/packwizUpdateOutput.js";
+import { parsePackwizUpdateLine } from "./packwizUpdateOutput.js";
 
 describe("parsePackwizUpdateLine", () => {
   it("parses a real mod update line (verified against a live packwiz run)", () => {

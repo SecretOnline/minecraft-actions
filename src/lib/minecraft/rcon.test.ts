@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decodePackets, encodePacket } from "../src/lib/rcon.js";
+import { decodePackets, encodePacket } from "./rcon.js";
 
 describe("encodePacket/decodePackets", () => {
   it("round-trips a single packet", () => {

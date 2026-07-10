@@ -3,9 +3,9 @@ import { closeSync, mkdirSync, openSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import * as core from "@actions/core";
-import { resolveArguments, substituteTemplate, type RuleContext } from "../lib/launcherRules.js";
-import type { MojangArgumentEntry } from "../lib/mojang.js";
-import { offlineUuidFromUsername } from "../lib/offlineUuid.js";
+import { resolveArguments, substituteTemplate, type RuleContext } from "../lib/mojang/launcherRules.js";
+import type { MojangArgumentEntry } from "../lib/mojang/mojang.js";
+import { offlineUuidFromUsername } from "../lib/mojang/offlineUuid.js";
 
 const STATE_PID = "client-pid";
 const GRACEFUL_STOP_TIMEOUT_MS = 10_000;

@@ -1,7 +1,7 @@
 import * as core from "@actions/core";
 import { readGradleProperty } from "../lib/gradleProperties.js";
-import { fetchVersionManifest, getJavaVersionForMcVersion } from "../lib/mojang.js";
-import { parseMavenRange, versionMatchesRange } from "../lib/versionRange.js";
+import { fetchVersionManifest, getJavaVersionForMcVersion } from "../lib/mojang/mojang.js";
+import { parseMavenRange, versionMatchesRange } from "../lib/version/versionRange.js";
 import { resolveUserAgent } from "../lib/userAgent.js";
 
 interface MatrixEntry {

@@ -10,7 +10,7 @@ import {
   type ModrinthIndex,
   type MrpackEnvironment,
   overridesDirName,
-} from "../lib/mrpack.js";
+} from "../lib/modrinth/mrpack.js";
 import { resolveUserAgent } from "../lib/userAgent.js";
 
 async function run(): Promise<void> {

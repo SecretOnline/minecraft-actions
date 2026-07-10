@@ -1,14 +1,24 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import * as core from "@actions/core";
-import { downloadAssets, downloadLibraries } from "../lib/clientDownload.js";
-import { buildClientOptions } from "../lib/clientOptions.js";
+import {
+  downloadAssets,
+  downloadLibraries,
+} from "../lib/minecraft/clientDownload.js";
+import { buildClientOptions } from "../lib/minecraft/clientOptions.js";
 import { downloadToFile, verifySha1 } from "../lib/download.js";
-import { fetchVersionManifest, getFullVersionData } from "../lib/mojang.js";
+import {
+  fetchVersionManifest,
+  getFullVersionData,
+} from "../lib/mojang/mojang.js";
 import { resolveUserAgent } from "../lib/userAgent.js";
 import { setupFabric } from "./loaders/fabric.js";
 import { setupNeoForge } from "./loaders/neoforge.js";
-import { type ClientBuildState, type ClientLoaderContext, applyLoaderResult } from "./loaders/types.js";
+import {
+  type ClientBuildState,
+  type ClientLoaderContext,
+  applyLoaderResult,
+} from "./loaders/types.js";
 import { setupVanillaClient } from "./loaders/vanilla.js";
 
 async function run(): Promise<void> {
@@ -21,11 +31,15 @@ async function run(): Promise<void> {
   const loader = core.getInput("loader") || "vanilla";
 
   if (assetStrategy !== "full" && assetStrategy !== "skip") {
-    core.setFailed(`Unknown asset-download-strategy "${assetStrategy}", expected "full" or "skip"`);
+    core.setFailed(
+      `Unknown asset-download-strategy "${assetStrategy}", expected "full" or "skip"`,
+    );
     return;
   }
   if (loader !== "vanilla" && loader !== "fabric" && loader !== "neoforge") {
-    core.setFailed(`Unknown loader "${loader}", expected "vanilla", "fabric", or "neoforge"`);
+    core.setFailed(
+      `Unknown loader "${loader}", expected "vanilla", "fabric", or "neoforge"`,
+    );
     return;
   }
 
@@ -45,7 +59,12 @@ async function run(): Promise<void> {
 
   mkdirSync(clientDirectory, { recursive: true });
 
-  const loaderContext: ClientLoaderContext = { mcVersion, userAgent, clientDirectory, versionData };
+  const loaderContext: ClientLoaderContext = {
+    mcVersion,
+    userAgent,
+    clientDirectory,
+    versionData,
+  };
 
   core.startGroup("Downloading client jar");
   let state: ClientBuildState = {
@@ -83,14 +102,24 @@ async function run(): Promise<void> {
     core.startGroup("Downloading log4j configuration");
     const loggingFile = versionData.logging.client.file;
     logConfigPath = "log4j2.xml";
-    const bytes = await downloadToFile(loggingFile.url, userAgent, join(clientDirectory, logConfigPath));
+    const bytes = await downloadToFile(
+      loggingFile.url,
+      userAgent,
+      join(clientDirectory, logConfigPath),
+    );
     verifySha1(bytes, loggingFile.sha1, "Log4j config");
     logConfigArgument = versionData.logging.client.argument;
     core.endGroup();
   }
 
   core.startGroup("Downloading assets");
-  await downloadAssets(clientDirectory, userAgent, versionData.assetIndex, assetStrategy, concurrency);
+  await downloadAssets(
+    clientDirectory,
+    userAgent,
+    versionData.assetIndex,
+    assetStrategy,
+    concurrency,
+  );
   core.endGroup();
 
   const nativesDirectory = "natives";
@@ -99,7 +128,10 @@ async function run(): Promise<void> {
   // Defaults skip first-launch UI (multiplayer warning, accessibility onboarding, the
   // tutorial toast) that would otherwise sit in front of quickplay and block a headless
   // client from ever reaching a joinable state.
-  writeFileSync(join(clientDirectory, "options.txt"), buildClientOptions(clientOptions));
+  writeFileSync(
+    join(clientDirectory, "options.txt"),
+    buildClientOptions(clientOptions),
+  );
 
   writeFileSync(
     join(clientDirectory, "launch-config.json"),

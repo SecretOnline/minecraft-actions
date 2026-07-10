@@ -4,7 +4,7 @@ import {
   stripBuildMetadata,
   versionSatisfiesAllRanges,
   versionSatisfiesRange,
-} from "../src/lib/semverRange.js";
+} from "./semverRange.js";
 
 describe("stripBuildMetadata", () => {
   it("removes a +build suffix", () => {

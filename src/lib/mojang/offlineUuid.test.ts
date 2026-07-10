@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { offlineUuidFromUsername } from "../src/lib/offlineUuid.js";
+import { offlineUuidFromUsername } from "./offlineUuid.js";
 
 const UUID_FORMAT = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 

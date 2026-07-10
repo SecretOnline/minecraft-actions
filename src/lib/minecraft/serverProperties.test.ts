@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildServerProperties } from "../src/lib/serverProperties.js";
+import { buildServerProperties } from "./serverProperties.js";
 
 describe("buildServerProperties", () => {
   it("applies CI-friendly defaults and the generated RCON password", () => {

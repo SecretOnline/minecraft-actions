@@ -9,7 +9,7 @@ import {
   PACKWIZ_TOOL_NAME,
   resolveGobinDir,
   resolvePackwizCacheDir,
-} from "../src/lib/packwiz.js";
+} from "./packwiz.js";
 
 describe("constants", () => {
   it("has the exact nightly.link URL", () => {

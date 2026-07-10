@@ -1,7 +1,7 @@
 import * as core from "@actions/core";
-import { fetchVersionManifest, findVersionEntry } from "../lib/mojang.js";
-import { deriveNeoForgePrefix } from "../lib/neoforge.js";
-import { compareVersions } from "../lib/versionRange.js";
+import { fetchVersionManifest, findVersionEntry } from "../lib/mojang/mojang.js";
+import { deriveNeoForgePrefix } from "../lib/loaders/neoforge.js";
+import { compareVersions } from "../lib/version/versionRange.js";
 import { resolveUserAgent } from "../lib/userAgent.js";
 
 async function fetchText(url: string, userAgent: string): Promise<string> {

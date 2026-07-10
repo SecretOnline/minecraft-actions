@@ -12,7 +12,7 @@ import {
   resolveGobinDir,
   resolvePackwizCacheDir,
   tryDownloadNightlyLink,
-} from "../lib/packwiz.js";
+} from "../lib/packwiz/packwiz.js";
 import { resolveUserAgent } from "../lib/userAgent.js";
 
 /**

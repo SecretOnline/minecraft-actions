@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { resolveUserAgent } from "../src/lib/userAgent.js";
+import { resolveUserAgent } from "./userAgent.js";
 
 describe("resolveUserAgent", () => {
   const originalRepository = process.env.GITHUB_REPOSITORY;

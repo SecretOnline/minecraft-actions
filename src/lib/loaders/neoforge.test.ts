@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildNeoForgeInstallerUrl, deriveNeoForgePrefix, findLatestNeoForgeVersion } from "../src/lib/neoforge.js";
+import { buildNeoForgeInstallerUrl, deriveNeoForgePrefix, findLatestNeoForgeVersion } from "./neoforge.js";
 
 describe("deriveNeoForgePrefix", () => {
   it("drops the leading '1.' for old-scheme MC versions", () => {

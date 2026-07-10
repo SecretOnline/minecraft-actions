@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { unlinkSync } from "node:fs";
 import { join } from "node:path";
-import { downloadToFile } from "./download.js";
+import { downloadToFile } from "../download.js";
 
 /**
  * Derives the NeoForge version prefix from a Minecraft numeric version.
