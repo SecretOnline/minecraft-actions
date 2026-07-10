@@ -6,6 +6,7 @@ on:
 
 jobs:
   sync-docs:
+    name: Update READMEs
     if: >-
       github.actor == 'dependabot[bot]' &&
       startsWith(github.event.pull_request.head.ref, 'dependabot/github_actions/')
@@ -80,7 +81,7 @@ jobs:
             done
           done < "$bumps_file"
 
-      - name: Commit and push doc updates
+      - name: Commit and Push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

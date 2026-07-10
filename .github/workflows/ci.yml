@@ -7,6 +7,7 @@ on:
 
 jobs:
   build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -46,6 +47,7 @@ jobs:
             packwiz-install-versions/dist
 
   test-version-actions:
+    name: Version Actions
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -126,6 +128,7 @@ jobs:
           test -n "${{ steps.update-versions-new-scheme-no-patch.outputs.neoform-version }}"
 
   test-mc-server:
+    name: Run Minecraft Server (${{ matrix.loader }})
     needs: build
     runs-on: ubuntu-latest
     strategy:
@@ -195,6 +198,7 @@ jobs:
           timeout 5 bash -c '</dev/tcp/127.0.0.1/${{ matrix.port }}' && echo "Server port is open"
 
   test-mc-client:
+    name: Run Minecraft Client (${{ matrix.loader }})
     needs: build
     runs-on: ubuntu-latest
     strategy:
@@ -281,6 +285,7 @@ jobs:
           test -n "${{ steps.run-client.outputs.pid }}"
 
   test-setup-packwiz:
+    name: Setup Packwiz
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -314,6 +319,7 @@ jobs:
           packwiz --help
 
   test-unpack-mrpack:
+    name: Unpack .mrpack
     needs: build
     runs-on: ubuntu-latest
     strategy:
@@ -355,7 +361,10 @@ jobs:
           test -f "mc-instance-server/mods/server-mod.txt"
 
   test-packwiz-mod-update-actions:
-    needs: build
+    name: Packwiz Update Actions
+    needs:
+      - build
+      - test-setup-packwiz
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
