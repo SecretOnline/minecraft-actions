@@ -10,6 +10,9 @@ const entryPoints = [
   { in: "src/run-mc-client/index.ts", out: "run-mc-client/dist/index.js" },
   { in: "src/setup-packwiz/index.ts", out: "setup-packwiz/dist/index.js" },
   { in: "src/unpack-mrpack/index.ts", out: "unpack-mrpack/dist/index.js" },
+  { in: "src/packwiz-update-pack/index.ts", out: "packwiz-update-pack/dist/index.js" },
+  { in: "src/check-fabric-conflicts/index.ts", out: "check-fabric-conflicts/dist/index.js" },
+  { in: "src/packwiz-install-versions/index.ts", out: "packwiz-install-versions/dist/index.js" },
 ];
 
 for (const { in: inFile, out: outFile } of entryPoints) {

@@ -41,6 +41,9 @@ jobs:
             run-mc-client/dist
             setup-packwiz/dist
             unpack-mrpack/dist
+            packwiz-update-pack/dist
+            check-fabric-conflicts/dist
+            packwiz-install-versions/dist
 
   test-version-actions:
     needs: build
@@ -350,3 +353,68 @@ jobs:
         if: matrix.environment == 'server'
         run: |
           test -f "mc-instance-server/mods/server-mod.txt"
+
+  test-packwiz-mod-update-actions:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: .
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Set up Packwiz
+        uses: ./setup-packwiz
+
+      - name: Initialise a scratch pack and pin Sodium to a stale version
+        run: |
+          mkdir -p scratch-pack
+          cd scratch-pack
+          packwiz init --name scratch --author ci --version 1.0.0 --mc-version 1.21.1 --modloader fabric -y
+          # Deliberately stale: a real, known-old Sodium 1.21.1 build, verified against the live Modrinth API.
+          packwiz modrinth add --project-id AANobbMI --version-id RncWhTxD --yes
+          sed -i 's/fabric = ".*"/fabric = "0.15.0"/' pack.toml
+
+      - name: Run packwiz-update-pack
+        id: update-pack
+        uses: ./packwiz-update-pack
+        with:
+          working-directory: scratch-pack
+
+      - name: Check packwiz-update-pack outputs
+        run: |
+          test "${{ steps.update-pack.outputs.has-update }}" = "true"
+          echo '${{ steps.update-pack.outputs.updated-mods }}' | jq -e 'length > 0'
+          echo '${{ steps.update-pack.outputs.loader-update }}' | jq -e '.name == "Fabric"'
+
+      - name: Run check-fabric-conflicts
+        id: check-conflicts
+        uses: ./check-fabric-conflicts
+        with:
+          working-directory: scratch-pack
+          minecraft-version: "1.21.1"
+          loader: fabric
+
+      - name: Check check-fabric-conflicts outputs are well-formed
+        run: |
+          # Whether a real conflict exists depends on live Modrinth state, so only the
+          # shape is asserted here - the pure conflict-resolution logic itself is covered
+          # by fixture-based unit tests.
+          echo '${{ steps.check-conflicts.outputs.has-conflicts }}' | grep -Eq '^(true|false)$'
+          echo '${{ steps.check-conflicts.outputs.conflicts }}' | jq -e 'type == "array"'
+
+      - name: Run packwiz-install-versions to pin Sodium back to the known-old version
+        uses: ./packwiz-install-versions
+        with:
+          working-directory: scratch-pack
+          versions: '[{"platform":"modrinth","mod":"AANobbMI","version":"RncWhTxD"}]'
+
+      - name: Check packwiz-install-versions applied the pin
+        run: |
+          grep -q 'version = "RncWhTxD"' scratch-pack/mods/sodium.pw.toml
