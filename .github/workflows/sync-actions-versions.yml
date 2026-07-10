@@ -1,4 +1,4 @@
-name: Sync Dependabot version bumps to docs
+name: Sync GitHub Actions versions
 
 on:
   pull_request_target:
@@ -19,7 +19,8 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Fetch base branch
-        run: git fetch origin ${{ github.event.pull_request.base.ref }} --depth=1
+        run: |
+          git fetch origin "${{ github.event.pull_request.base.ref }}:refs/remotes/origin/${{ github.event.pull_request.base.ref }}" --depth=1
 
       - name: Find version bumps and sync README examples
         env:
@@ -27,9 +28,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Manifests Dependabot itself edits: workflow files and any action.yml.
+          # Get changed files manually (due to shallow fetch)
           mapfile -t changed_files < <(
-            git diff --name-only "$BASE_REF"...HEAD -- \
+            git diff --name-only "$BASE_REF".."HEAD" -- \
               '.github/workflows/*.yml' '.github/workflows/*.yaml' '**/action.yml'
           )
 
