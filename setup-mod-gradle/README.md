@@ -7,7 +7,7 @@ By default, the Java version is read from the `java_version` field in gradle.pro
 ## Usage
 
 ```yaml
-- uses: actions/checkout@v6
+- uses: actions/checkout@v7
 - uses: SecretOnline/minecraft-actions/setup-mod-gradle@v2
 - run: ./gradlew build
 ```
@@ -15,7 +15,7 @@ By default, the Java version is read from the `java_version` field in gradle.pro
 With an explicit Java version (for example, from a matrix):
 
 ```yaml
-- uses: actions/checkout@v6
+- uses: actions/checkout@v7
 - uses: SecretOnline/minecraft-actions/setup-mod-gradle@v2
   id: gradle
   with:

@@ -13,7 +13,7 @@ jobs:
     outputs:
       test-matrix: ${{ steps.matrix.outputs.test-matrix }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: SecretOnline/minecraft-actions/get-test-matrix@v2
         id: matrix
 
