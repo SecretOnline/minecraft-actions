@@ -1,0 +1,35 @@
+name: Check Fabric mod conflicts
+description: >-
+  Scans every installed Fabric mod's fabric.mod.json depends block against the pack's
+  currently installed mods, and for any mod that fails a dependent's declared version
+  range, searches that mod's Modrinth version history (newest first) for the newest
+  version that satisfies every declared range against it. Does not adjust a dependent's
+  own version - only the flagged dependency's - so a conflict caused by a dependent's own
+  fresh update to a version with a different requirement may not be resolvable (see README).
+
+inputs:
+  working-directory:
+    description: Pack directory containing a mods/ subdirectory of *.pw.toml files.
+    default: "."
+  minecraft-version:
+    description: Minecraft version to filter candidate Modrinth versions by.
+    required: true
+  loader:
+    description: Mod loader to filter candidate Modrinth versions by (e.g. fabric).
+    required: true
+  max-versions-to-search:
+    description: How many of a dependency's newest Modrinth versions to check before giving up.
+    default: "10"
+
+outputs:
+  has-conflicts:
+    description: Whether any fix was found.
+  conflicts:
+    description: >-
+      JSON array of { platform, mod, version } triples, each a Modrinth project ID and
+      version ID to install to resolve a detected conflict. Suitable as-is for the
+      packwiz-install-versions action's "versions" input.
+
+runs:
+  using: node24
+  main: dist/index.js
