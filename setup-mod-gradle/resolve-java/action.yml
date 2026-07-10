@@ -1,0 +1,20 @@
+name: Resolve Java version
+description: Resolves the Java version from the java-version input or gradle.properties.
+
+inputs:
+  java-version:
+    description: >-
+      Java version to use. If not set, reads java_version from the gradle.properties file.
+    required: false
+  gradle-properties:
+    description: Path to the gradle.properties file.
+    required: false
+    default: gradle.properties
+
+outputs:
+  java-version:
+    description: The resolved Java version.
+
+runs:
+  using: node24
+  main: dist/index.js

@@ -1,0 +1,5 @@
+node_modules/
+dist/
+*.log
+.act-artifacts/
+.act-cache/
