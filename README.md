@@ -16,7 +16,7 @@ npm run typecheck   # tsc --noEmit
 npm test            # vitest unit tests
 ```
 
-`setup-mod-gradle` remains a composite action (it calls third-party marketplace actions for Java/Gradle setup); only its "resolve Java version" step is its own local `node24` action, at `setup-mod-gradle/resolve-java/`.
+`setup-mod-gradle` remains a composite action (it calls third-party marketplace actions for Java/Gradle setup).
 
 ### Testing locally
 

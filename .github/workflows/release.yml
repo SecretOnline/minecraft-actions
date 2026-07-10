@@ -47,8 +47,7 @@ jobs:
         run: |
           source_sha=$(git rev-parse HEAD)
 
-          # Discover action directories (recursively, so nested actions like
-          # setup-mod-gradle/resolve-java are found too)
+          # Discover action directories recursively
           mapfile -t action_dirs < <(
             git ls-tree -r --name-only "$source_sha" \
               | grep '/action\.yml$' \

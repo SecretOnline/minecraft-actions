@@ -24,19 +24,23 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Setup Node
-      uses: actions/setup-node@v6
-      with:
-        node-version-file: ${{ github.action_path }}/../.node-version
-
     - name: Resolve Java version
       id: resolve-java
       shell: bash
-      # `uses:` local paths (relative or via github.action_path) resolve against the runner's $GITHUB_WORKSPACE
       env:
-        INPUT_java-version: ${{ inputs.java-version }}
-        INPUT_gradle-properties: ${{ inputs.gradle-properties }}
-      run: node "${{ github.action_path }}/resolve-java/dist/index.js"
+        INPUT_JAVA_VERSION: ${{ inputs.java-version }}
+        GRADLE_PROPERTIES: ${{ inputs.gradle-properties }}
+      run: |
+        if [ -n "$INPUT_JAVA_VERSION" ]; then
+          JAVA_VERSION="$INPUT_JAVA_VERSION"
+        else
+          JAVA_VERSION=$(grep '^java_version=' "$GRADLE_PROPERTIES" | cut -d= -f2)
+          if [ -z "$JAVA_VERSION" ]; then
+            echo "::error::Could not find java_version in $GRADLE_PROPERTIES"
+            exit 1
+          fi
+        fi
+        echo "java-version=$JAVA_VERSION" >> "$GITHUB_OUTPUT"
 
     - name: Ensure Gradle wrapper is executable
       shell: bash
