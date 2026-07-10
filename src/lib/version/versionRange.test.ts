@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compareVersions, parseMavenRange, versionMatchesRange } from "../src/lib/versionRange.js";
+import { compareVersions, parseMavenRange, versionMatchesRange } from "./versionRange.js";
 
 describe("compareVersions", () => {
   it("compares dotted numeric versions numerically, not lexically", () => {

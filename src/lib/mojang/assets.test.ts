@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { assetObjectPath, buildAssetObjectUrl } from "../src/lib/assets.js";
+import { assetObjectPath, buildAssetObjectUrl } from "./assets.js";
 
 const HASH = "981aab8147520cdc1f0d4a84f46c161929021fee";
 

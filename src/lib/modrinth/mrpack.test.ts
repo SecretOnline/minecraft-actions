@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isFileSupportedForEnvironment, type ModrinthIndexFile, overridesDirName } from "../src/lib/mrpack.js";
+import { isFileSupportedForEnvironment, type ModrinthIndexFile, overridesDirName } from "./mrpack.js";
 
 function file(env?: ModrinthIndexFile["env"]): ModrinthIndexFile {
   return {

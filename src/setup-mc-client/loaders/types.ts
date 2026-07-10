@@ -1,6 +1,10 @@
 import { join } from "node:path";
-import type { LibraryDownload } from "../../lib/clientDownload.js";
-import type { MojangArgumentEntry, MojangLibrary, MojangVersionData } from "../../lib/mojang.js";
+import type { LibraryDownload } from "../../lib/minecraft/clientDownload.js";
+import type {
+  MojangArgumentEntry,
+  MojangLibrary,
+  MojangVersionData,
+} from "../../lib/mojang/mojang.js";
 
 export interface ClientLoaderContext {
   mcVersion: string;
@@ -31,7 +35,10 @@ export interface ClientBuildState {
  * library downloads and cache key suffixes accumulate, while mainClass/args are
  * appended/overridden by whichever loader ran last.
  */
-export function applyLoaderResult(state: ClientBuildState, result: LoaderResult): ClientBuildState {
+export function applyLoaderResult(
+  state: ClientBuildState,
+  result: LoaderResult,
+): ClientBuildState {
   return {
     mainClass: result.mainClass ?? state.mainClass,
     jvmArgTemplate: [...state.jvmArgTemplate, ...result.extraJvmArgs],

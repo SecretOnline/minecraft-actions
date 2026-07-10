@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
 import { downloadToFile, verifySha1 } from "../../lib/download.js";
-import { getServerDownloadForMcVersion } from "../../lib/mojang.js";
+import { getServerDownloadForMcVersion } from "../../lib/mojang/mojang.js";
 import type { ServerLoaderContext } from "./types.js";
 
 export async function setupVanillaServer(ctx: ServerLoaderContext): Promise<void> {

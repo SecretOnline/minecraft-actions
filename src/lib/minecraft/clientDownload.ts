@@ -2,9 +2,9 @@ import { existsSync, mkdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import * as core from "@actions/core";
 import PQueue from "p-queue";
-import { type AssetIndex, assetObjectPath, buildAssetObjectUrl } from "./assets.js";
-import { tryRestoreCache, trySaveCache } from "./cache.js";
-import { downloadToFile, verifySha1 } from "./download.js";
+import { type AssetIndex, assetObjectPath, buildAssetObjectUrl } from "../mojang/assets.js";
+import { tryRestoreCache, trySaveCache } from "../cache.js";
+import { downloadToFile, verifySha1 } from "../download.js";
 
 export interface LibraryDownload {
   url: string;

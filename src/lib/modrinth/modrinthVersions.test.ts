@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapModrinthVersion } from "../src/lib/modrinthVersions.js";
+import { mapModrinthVersion } from "./modrinthVersions.js";
 
 describe("mapModrinthVersion", () => {
   it("maps the real Modrinth API response shape to camelCase", () => {

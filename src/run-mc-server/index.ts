@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import * as core from "@actions/core";
 import { readGradleProperty } from "../lib/gradleProperties.js";
-import { sendRconCommand } from "../lib/rcon.js";
+import { sendRconCommand } from "../lib/minecraft/rcon.js";
 
 const STATE_PID = "server-pid";
 const GRACEFUL_STOP_TIMEOUT_MS = 10_000;

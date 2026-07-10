@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import * as core from "@actions/core";
-import { type LoaderUpdate, type ModUpdate, parsePackwizUpdateLine } from "../lib/packwizUpdateOutput.js";
+import { type LoaderUpdate, type ModUpdate, parsePackwizUpdateLine } from "../lib/packwiz/packwizUpdateOutput.js";
 
 function runPackwiz(args: string[], cwd: string): string {
   const result = spawnSync("packwiz", args, { cwd, encoding: "utf8" });

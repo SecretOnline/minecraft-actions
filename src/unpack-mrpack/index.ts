@@ -1,6 +1,6 @@
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import * as core from "@actions/core";
 import * as tc from "@actions/tool-cache";
 import PQueue from "p-queue";
@@ -10,7 +10,7 @@ import {
   type ModrinthIndex,
   type MrpackEnvironment,
   overridesDirName,
-} from "../lib/mrpack.js";
+} from "../lib/modrinth/mrpack.js";
 import { resolveUserAgent } from "../lib/userAgent.js";
 
 async function run(): Promise<void> {
@@ -28,7 +28,9 @@ async function run(): Promise<void> {
   const tempDir = mkdtempSync(join(process.env.RUNNER_TEMP || tmpdir(), "unpack-mrpack-"));
   try {
     core.startGroup("Extracting mrpack");
-    await tc.extractZip(mrpackFile, tempDir);
+    // extractZip runs unzip with cwd set to tempDir, so a relative mrpackFile must be
+    // resolved against the original working directory first, or unzip looks for it in tempDir instead.
+    await tc.extractZip(resolve(mrpackFile), tempDir);
     const index = JSON.parse(readFileSync(join(tempDir, "modrinth.index.json"), "utf8")) as ModrinthIndex;
     core.info(`Pack: ${index.name} (${index.versionId})`);
     core.endGroup();

@@ -4,10 +4,10 @@ import { join } from "node:path";
 import * as core from "@actions/core";
 import * as tc from "@actions/tool-cache";
 import { downloadToFile } from "../lib/download.js";
-import { parseFabricModJson } from "../lib/fabricModJson.js";
-import { listProjectVersions, type ModrinthVersion } from "../lib/modrinthVersions.js";
-import { parsePackwizModToml, type PackwizModEntry } from "../lib/packwizToml.js";
-import { versionSatisfiesAllRanges } from "../lib/semverRange.js";
+import { parseFabricModJson } from "../lib/loaders/fabric.js";
+import { listProjectVersions, type ModrinthVersion } from "../lib/modrinth/modrinthVersions.js";
+import { parsePackwizModToml, type PackwizModEntry } from "../lib/packwiz/packwizToml.js";
+import { versionSatisfiesAllRanges } from "../lib/version/semverRange.js";
 import { resolveUserAgent } from "../lib/userAgent.js";
 
 export interface ConflictFix {

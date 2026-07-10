@@ -1,8 +1,8 @@
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { readGradleProperty } from "../src/lib/gradleProperties.js";
+import { readGradleProperty } from "./gradleProperties.js";
 
-const fixture = fileURLToPath(new URL("./fixtures/gradle.properties", import.meta.url));
+const fixture = fileURLToPath(new URL("../../test/fixtures/gradle.properties", import.meta.url));
 
 describe("readGradleProperty", () => {
   it("reads a known key", () => {

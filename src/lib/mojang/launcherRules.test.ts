@@ -4,9 +4,9 @@ import {
   filterLibrariesForLinux,
   resolveArguments,
   substituteTemplate,
-} from "../src/lib/launcherRules.js";
-import type { MojangVersionData } from "../src/lib/mojang.js";
-import fixture from "./fixtures/mc-version-26.2-trimmed.json";
+} from "./launcherRules.js";
+import type { MojangVersionData } from "./mojang.js";
+import fixture from "../../../test/fixtures/mc-version-26.2-trimmed.json";
 
 const versionData = fixture as unknown as MojangVersionData;
 

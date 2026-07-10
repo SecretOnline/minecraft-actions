@@ -1,9 +1,9 @@
 import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import * as core from "@actions/core";
-import { filterLibrariesForLinux } from "../../lib/launcherRules.js";
-import type { MojangArgumentEntry, MojangLibrary } from "../../lib/mojang.js";
-import { fetchNeoForgeVersions, findLatestNeoForgeVersion, runNeoForgeInstaller } from "../../lib/neoforge.js";
+import { filterLibrariesForLinux } from "../../lib/mojang/launcherRules.js";
+import type { MojangArgumentEntry, MojangLibrary } from "../../lib/mojang/mojang.js";
+import { fetchNeoForgeVersions, findLatestNeoForgeVersion, runNeoForgeInstaller } from "../../lib/loaders/neoforge.js";
 import { type ClientLoaderContext, type LoaderResult, libraryToDownload } from "./types.js";
 
 export async function setupNeoForge(ctx: ClientLoaderContext): Promise<LoaderResult> {

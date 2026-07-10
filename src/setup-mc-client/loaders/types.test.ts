@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyLoaderResult, type ClientBuildState, type LoaderResult } from "../src/setup-mc-client/loaders/types.js";
+import { applyLoaderResult, type ClientBuildState, type LoaderResult } from "./types.js";
 
 function emptyState(cacheKey: string): ClientBuildState {
   return { jvmArgTemplate: [], gameArgTemplate: [], libraryDownloads: [], cacheKey };

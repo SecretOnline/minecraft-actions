@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildClientOptions } from "../src/lib/clientOptions.js";
+import { buildClientOptions } from "./clientOptions.js";
 
 describe("buildClientOptions", () => {
   it("applies the first-launch-UI-skipping defaults", () => {

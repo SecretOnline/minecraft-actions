@@ -1,4 +1,4 @@
-import type { MojangVersionManifest } from "../../lib/mojang.js";
+import type { MojangVersionManifest } from "../../lib/mojang/mojang.js";
 
 export interface ServerLoaderContext {
   mcVersion: string;

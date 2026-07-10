@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parsePackwizModToml } from "../src/lib/packwizToml.js";
+import { parsePackwizModToml } from "./packwizToml.js";
 
 // Real shape taken from secrets-pack's mods/sodium.pw.toml.
 const SODIUM_TOML = `

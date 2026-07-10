@@ -6,7 +6,7 @@ import {
   fetchFabricProfile,
   findLatestStableFabricVersion,
   mavenCoordinateToPath,
-} from "../../lib/fabric.js";
+} from "../../lib/loaders/fabric.js";
 import type { ClientLoaderContext, LoaderResult } from "./types.js";
 
 export async function setupFabric(ctx: ClientLoaderContext): Promise<LoaderResult> {

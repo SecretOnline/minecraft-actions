@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import * as core from "@actions/core";
 import { downloadToFile, verifySha1 } from "../../lib/download.js";
-import { filterLibrariesForLinux } from "../../lib/launcherRules.js";
+import { filterLibrariesForLinux } from "../../lib/mojang/launcherRules.js";
 import { type ClientLoaderContext, type LoaderResult, libraryToDownload } from "./types.js";
 
 export async function setupVanillaClient(ctx: ClientLoaderContext): Promise<LoaderResult> {

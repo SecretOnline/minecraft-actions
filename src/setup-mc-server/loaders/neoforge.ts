@@ -1,5 +1,5 @@
 import * as core from "@actions/core";
-import { fetchNeoForgeVersions, findLatestNeoForgeVersion, runNeoForgeInstaller } from "../../lib/neoforge.js";
+import { fetchNeoForgeVersions, findLatestNeoForgeVersion, runNeoForgeInstaller } from "../../lib/loaders/neoforge.js";
 import type { ServerLoaderContext } from "./types.js";
 
 export async function setupNeoForgeServer(ctx: ServerLoaderContext): Promise<void> {
