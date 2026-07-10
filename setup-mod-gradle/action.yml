@@ -24,12 +24,19 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Setup Node
+      uses: actions/setup-node@v6
+      with:
+        node-version-file: ${{ github.action_path }}/../.node-version
+
     - name: Resolve Java version
       id: resolve-java
-      uses: ./setup-mod-gradle/resolve-java
-      with:
-        java-version: ${{ inputs.java-version }}
-        gradle-properties: ${{ inputs.gradle-properties }}
+      shell: bash
+      # `uses:` local paths (relative or via github.action_path) resolve against the runner's $GITHUB_WORKSPACE
+      env:
+        INPUT_java-version: ${{ inputs.java-version }}
+        INPUT_gradle-properties: ${{ inputs.gradle-properties }}
+      run: node "${{ github.action_path }}/resolve-java/dist/index.js"
 
     - name: Ensure Gradle wrapper is executable
       shell: bash
