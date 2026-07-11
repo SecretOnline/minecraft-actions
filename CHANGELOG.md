@@ -16,6 +16,13 @@ The versioning scheme is listed in the README.
 
 ## Unreleased - DATE
 
+## v2.1.1 - 2026-07-11
+
+### Added
+
+- New output for the `screenshot-mc-client` action:
+  - `url`: the uploaded artifact URL
+
 ## v2.1.0 - 2026-07-11
 
 ### Added
