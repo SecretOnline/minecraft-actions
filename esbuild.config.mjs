@@ -10,6 +10,7 @@ const entryPoints = [
   { in: "src/run-mc-server/index.ts", out: "run-mc-server/dist/index.js" },
   { in: "src/setup-mc-client/index.ts", out: "setup-mc-client/dist/index.js" },
   { in: "src/run-mc-client/index.ts", out: "run-mc-client/dist/index.js" },
+  { in: "src/screenshot-mc-client/index.ts", out: "screenshot-mc-client/dist/index.js" },
   { in: "src/setup-packwiz/index.ts", out: "setup-packwiz/dist/index.js" },
   { in: "src/unpack-mrpack/index.ts", out: "unpack-mrpack/dist/index.js" },
   {

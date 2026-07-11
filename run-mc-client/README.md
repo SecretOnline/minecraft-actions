@@ -38,3 +38,5 @@ steps:
 | --- | --- |
 | `pid` | Process ID of the running client (the `xvfb-run` wrapper process). |
 | `log-file` | Path the client's stdout/stderr was redirected to. |
+| `display` | X display the client is running on (e.g. `:99`). Set `DISPLAY` to this in a later step to interact with or screenshot the same display. |
+| `xauthority` | Path to the Xauthority cookie file for the display. Set `XAUTHORITY` to this in a later step alongside `display` to authenticate against the same display. |

@@ -2,7 +2,6 @@ name: CI
 
 on:
   push:
-    branches: [main]
   pull_request:
 
 jobs:
@@ -40,6 +39,7 @@ jobs:
             run-mc-server/dist
             setup-mc-client/dist
             run-mc-client/dist
+            screenshot-mc-client/dist
             setup-packwiz/dist
             unpack-mrpack/dist
             packwiz-update-pack/dist
@@ -232,8 +232,8 @@ jobs:
           distribution: temurin
           java-version: ${{ steps.mc-versions.outputs.java-version }}
 
-      - name: Install Xvfb and Mesa software renderer
-        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri mesa-utils
+      - name: Install Xvfb, Mesa software renderer, and ImageMagick
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri mesa-utils imagemagick
 
       - name: Set up Minecraft server
         id: setup-server
@@ -283,6 +283,21 @@ jobs:
       - name: Check run-mc-client outputs
         run: |
           test -n "${{ steps.run-client.outputs.pid }}"
+          test -n "${{ steps.run-client.outputs.display }}"
+          test -n "${{ steps.run-client.outputs.xauthority }}"
+
+      - name: Screenshot Minecraft client
+        id: screenshot
+        uses: ./screenshot-mc-client
+        with:
+          display: ${{ steps.run-client.outputs.display }}
+          xauthority: ${{ steps.run-client.outputs.xauthority }}
+          artifact-name: client-screenshot-${{ matrix.loader }}
+          add-job-summary: "true"
+
+      - name: Check screenshot-mc-client outputs
+        run: |
+          test -n "${{ steps.screenshot.outputs.artifact-id }}"
 
   test-setup-packwiz:
     name: Setup Packwiz

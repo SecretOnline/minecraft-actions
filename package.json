@@ -9,6 +9,7 @@
     "test:act": "act push --artifact-server-path .act-artifacts --cache-server-path .act-cache"
   },
   "devDependencies": {
+    "@actions/artifact": "^6.2.1",
     "@actions/cache": "^6.1.0",
     "@actions/core": "^3.0.1",
     "@actions/tool-cache": "^4.0.0",

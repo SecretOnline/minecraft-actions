@@ -16,20 +16,29 @@ The versioning scheme is listed in the README.
 
 ## Unreleased - DATE
 
-## v2.0.2 - 2023-07-10
+## v2.1.0 - 2026-07-11
+
+### Added
+
+- `screenshot-mc-client` action:
+  - Takes a screenshot and uploads it as an artifact.
+- New outputs for the `run-mc-client` action:
+  - `display` and `xauthority` for interacting with the virtual frame buffer.
+
+## v2.0.2 - 2026-07-10
 
 ### Fixed
 
 - `setup-mod-gradle` action not being able to resolve script.
   - Fixed by reverting it back to Bash.
 
-## v2.0.1 - 2023-07-10
+## v2.0.1 - 2026-07-10
 
 ### Fixed
 
 - Broken actions due to bug in release workflow.
 
-## v2.0.0 - 2023-07-10
+## v2.0.0 - 2026-07-10
 
 Nearly 3 years later and I'm back in this repo.
 

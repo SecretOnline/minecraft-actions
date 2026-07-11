@@ -1,5 +1,7 @@
+import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
-import { closeSync, mkdirSync, openSync, readFileSync } from "node:fs";
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import * as core from "@actions/core";
@@ -34,6 +36,16 @@ function isAlive(pid: number): boolean {
   } catch {
     return false;
   }
+}
+
+// Picks a free X display number by checking for the lock file X servers create
+// (/tmp/.X<N>-lock), the same convention xvfb-run's own -a/--auto-servernum uses.
+function findFreeDisplayNumber(startAt = 99): number {
+  let displayNumber = startAt;
+  while (existsSync(`/tmp/.X${displayNumber}-lock`)) {
+    displayNumber++;
+  }
+  return displayNumber;
 }
 
 async function start(): Promise<void> {
@@ -104,15 +116,24 @@ async function start(): Promise<void> {
 
   const args = [...jvmArgs, ...extraJavaArgs, ...logArg, config.mainClass, ...gameArgs];
 
+  // Pick the display number and Xauthority path ourselves, rather than leaving xvfb-run's
+  // -a/--auto-servernum to choose (and hide) them, so they can be handed to a later step
+  // for screenshotting the same display. xvfb-run still creates the Xvfb server and
+  // populates the auth file - we're just fixing where it puts them, not doing that part
+  // ourselves.
+  const displayNumber = findFreeDisplayNumber();
+  const display = `:${displayNumber}`;
+  const xauthority = join(tmpdir(), `xvfb-run-mc-client-${randomUUID()}.auth`);
+
   mkdirSync(clientDirectory, { recursive: true });
   const logFd = openSync(logFile, "w");
-  const child = spawn("xvfb-run", ["-a", "java", ...args], {
+  const child = spawn("xvfb-run", ["-n", String(displayNumber), "-f", xauthority, "java", ...args], {
     cwd: clientDirectory,
     detached: true,
     stdio: ["ignore", logFd, logFd],
   });
   closeSync(logFd);
-  core.info(`Started xvfb-run -a java ... (pid ${child.pid})`);
+  core.info(`Started xvfb-run -n ${displayNumber} -f ${xauthority} java ... (pid ${child.pid})`);
 
   let exited = false;
   let exitInfo = "";
@@ -131,6 +152,8 @@ async function start(): Promise<void> {
       core.saveState(STATE_PID, String(child.pid));
       core.setOutput("pid", String(child.pid));
       core.setOutput("log-file", logFile);
+      core.setOutput("display", display);
+      core.setOutput("xauthority", xauthority);
       child.unref();
       core.info("Minecraft client is ready");
       return;
