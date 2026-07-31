@@ -75,7 +75,7 @@ jobs:
         env:
           TEST_MATRIX: ${{ steps.test-matrix.outputs.test-matrix }}
         run: |
-          echo '${TEST_MATRIX}' | jq -e 'length > 0'
+          echo "${TEST_MATRIX}" | jq -e 'length > 0'
 
       - name: Run get-test-matrix against fixture (new scheme, w/ patch)
         id: test-matrix-new-scheme
@@ -87,7 +87,7 @@ jobs:
         env:
           TEST_MATRIX: ${{ steps.test-matrix-new-scheme.outputs.test-matrix }}
         run: |
-          echo '${TEST_MATRIX}' | jq -e 'length > 0'
+          echo "${TEST_MATRIX}" | jq -e 'length > 0'
 
       - name: Run get-test-matrix against fixture (new scheme, no patch)
         id: test-matrix-new-scheme-no-patch
@@ -99,7 +99,7 @@ jobs:
         env:
           TEST_MATRIX: ${{ steps.test-matrix-new-scheme-no-patch.outputs.test-matrix }}
         run: |
-          echo '${TEST_MATRIX}' | jq -e 'length > 0'
+          echo "${TEST_MATRIX}" | jq -e 'length > 0'
 
       - name: Run get-update-versions against fixture (1.x scheme)
         id: update-versions
@@ -480,8 +480,8 @@ jobs:
           LOADER_UPDATE: ${{ steps.update-pack.outputs.loader-update }}
         run: |
           test "${HAS_UPDATE}" = "true"
-          echo '${UPDATED_MODS}' | jq -e 'length > 0'
-          echo '${LOADER_UPDATE}' | jq -e '.name == "Fabric"'
+          echo "${UPDATED_MODS}" | jq -e 'length > 0'
+          echo "${LOADER_UPDATE}" | jq -e '.name == "Fabric"'
 
       - name: Run check-fabric-conflicts
         id: check-conflicts
@@ -499,8 +499,8 @@ jobs:
           # Whether a real conflict exists depends on live Modrinth state, so only the
           # shape is asserted here - the pure conflict-resolution logic itself is covered
           # by fixture-based unit tests.
-          echo '${HAS_CONFLICTS}' | grep -Eq '^(true|false)$'
-          echo '${CONFLICTS}' | jq -e 'type == "array"'
+          echo "${HAS_CONFLICTS}" | grep -Eq '^(true|false)$'
+          echo "${CONFLICTS}" | jq -e 'type == "array"'
 
       - name: Run packwiz-install-versions to pin Sodium back to the known-old version
         uses: ./packwiz-install-versions

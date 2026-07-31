@@ -111,12 +111,12 @@ jobs:
       - name: Tag and push
         if: ${{ !inputs.dry-run }}
         env:
-          STEPS_RELEASE_COMMIT_OUTPUTS_SHA: ${{ steps.release-commit.outputs.sha }}
+          SHA: ${{ steps.release-commit.outputs.sha }}
         run: |
           full="v$VERSION"
           minor="v$(echo "$VERSION" | cut -d. -f1-2)"
           major="v$(echo "$VERSION" | cut -d. -f1)"
-          sha="${STEPS_RELEASE_COMMIT_OUTPUTS_SHA}"
+          sha="${SHA}"
 
           git tag -fa "$full"  "$sha" -m "Release $full"
           git tag -fa "$minor" "$sha" -m "Release $minor"
