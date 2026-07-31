@@ -8,6 +8,11 @@ on:
         description: "Semver version (no leading v, e.g. 1.2.3)"
         required: true
         type: string
+      dry-run:
+        description: "Run the build/changelog steps but skip tagging, pushing, and creating the GitHub release"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   release:
@@ -102,6 +107,7 @@ jobs:
           echo "source-sha=$source_sha" >> "$GITHUB_OUTPUT"
 
       - name: Tag and push
+        if: ${{ !inputs.dry-run }}
         run: |
           full="v$VERSION"
           minor="v$(echo "$VERSION" | cut -d. -f1-2)"
@@ -115,6 +121,7 @@ jobs:
           git push origin "$full" "$minor" "$major" --force
 
       - name: Create GitHub release
+        if: ${{ !inputs.dry-run }}
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_NOTES: ${{ steps.changelog.outputs.release-notes }}
@@ -131,3 +138,7 @@ jobs:
             --target "$RELEASE_SHA" \
             --notes-file /tmp/release-notes.md \
             --latest
+
+      - name: Dry run notice
+        if: ${{ inputs.dry-run }}
+        run: echo "::notice::Dry run - skipped tagging, pushing, and creating the GitHub release."
