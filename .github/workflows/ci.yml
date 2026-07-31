@@ -72,8 +72,10 @@ jobs:
           gradle-properties: test/fixtures/gradle.properties
 
       - name: Check get-test-matrix output (1.x scheme)
+        env:
+          TEST_MATRIX: ${{ steps.test-matrix.outputs.test-matrix }}
         run: |
-          echo '${{ steps.test-matrix.outputs.test-matrix }}' | jq -e 'length > 0'
+          echo '${TEST_MATRIX}' | jq -e 'length > 0'
 
       - name: Run get-test-matrix against fixture (new scheme, w/ patch)
         id: test-matrix-new-scheme
@@ -82,8 +84,10 @@ jobs:
           gradle-properties: test/fixtures/gradle-new-scheme.properties
 
       - name: Check get-test-matrix output (new scheme, w/ patch)
+        env:
+          TEST_MATRIX: ${{ steps.test-matrix-new-scheme.outputs.test-matrix }}
         run: |
-          echo '${{ steps.test-matrix-new-scheme.outputs.test-matrix }}' | jq -e 'length > 0'
+          echo '${TEST_MATRIX}' | jq -e 'length > 0'
 
       - name: Run get-test-matrix against fixture (new scheme, no patch)
         id: test-matrix-new-scheme-no-patch
@@ -92,8 +96,10 @@ jobs:
           gradle-properties: test/fixtures/gradle-new-scheme-no-patch.properties
 
       - name: Check get-test-matrix output (new scheme, no patch)
+        env:
+          TEST_MATRIX: ${{ steps.test-matrix-new-scheme-no-patch.outputs.test-matrix }}
         run: |
-          echo '${{ steps.test-matrix-new-scheme-no-patch.outputs.test-matrix }}' | jq -e 'length > 0'
+          echo '${TEST_MATRIX}' | jq -e 'length > 0'
 
       - name: Run get-update-versions against fixture (1.x scheme)
         id: update-versions
@@ -102,11 +108,16 @@ jobs:
           minecraft-version: 1.21.4
 
       - name: Check get-update-versions outputs (1.x scheme)
+        env:
+          FABRIC_LOADER_VERSION: ${{ steps.update-versions.outputs.fabric-loader-version }}
+          FABRIC_API_VERSION: ${{ steps.update-versions.outputs.fabric-api-version }}
+          NEOFORGE_VERSION: ${{ steps.update-versions.outputs.neoforge-version }}
+          NEOFORM_VERSION: ${{ steps.update-versions.outputs.neoform-version }}
         run: |
-          test -n "${{ steps.update-versions.outputs.fabric-loader-version }}"
-          test -n "${{ steps.update-versions.outputs.fabric-api-version }}"
-          test -n "${{ steps.update-versions.outputs.neoforge-version }}"
-          test -n "${{ steps.update-versions.outputs.neoform-version }}"
+          test -n "${FABRIC_LOADER_VERSION}"
+          test -n "${FABRIC_API_VERSION}"
+          test -n "${NEOFORGE_VERSION}"
+          test -n "${NEOFORM_VERSION}"
 
       - name: Run get-update-versions against fixture (new scheme, w/ patch)
         id: update-versions-new-scheme
@@ -115,11 +126,16 @@ jobs:
           minecraft-version: 26.1.2
 
       - name: Check get-update-versions outputs (new scheme, w/ patch)
+        env:
+          FABRIC_LOADER_VERSION: ${{ steps.update-versions-new-scheme.outputs.fabric-loader-version }}
+          FABRIC_API_VERSION: ${{ steps.update-versions-new-scheme.outputs.fabric-api-version }}
+          NEOFORGE_VERSION: ${{ steps.update-versions-new-scheme.outputs.neoforge-version }}
+          NEOFORM_VERSION: ${{ steps.update-versions-new-scheme.outputs.neoform-version }}
         run: |
-          test -n "${{ steps.update-versions-new-scheme.outputs.fabric-loader-version }}"
-          test -n "${{ steps.update-versions-new-scheme.outputs.fabric-api-version }}"
-          test -n "${{ steps.update-versions-new-scheme.outputs.neoforge-version }}"
-          test -n "${{ steps.update-versions-new-scheme.outputs.neoform-version }}"
+          test -n "${FABRIC_LOADER_VERSION}"
+          test -n "${FABRIC_API_VERSION}"
+          test -n "${NEOFORGE_VERSION}"
+          test -n "${NEOFORM_VERSION}"
 
       - name: Run get-update-versions against fixture (new scheme, no patch)
         id: update-versions-new-scheme-no-patch
@@ -128,11 +144,16 @@ jobs:
           minecraft-version: 26.2
 
       - name: Check get-update-versions outputs (new scheme, no patch)
+        env:
+          FABRIC_LOADER_VERSION: ${{ steps.update-versions-new-scheme-no-patch.outputs.fabric-loader-version }}
+          FABRIC_API_VERSION: ${{ steps.update-versions-new-scheme-no-patch.outputs.fabric-api-version }}
+          NEOFORGE_VERSION: ${{ steps.update-versions-new-scheme-no-patch.outputs.neoforge-version }}
+          NEOFORM_VERSION: ${{ steps.update-versions-new-scheme-no-patch.outputs.neoform-version }}
         run: |
-          test -n "${{ steps.update-versions-new-scheme-no-patch.outputs.fabric-loader-version }}"
-          test -n "${{ steps.update-versions-new-scheme-no-patch.outputs.fabric-api-version }}"
-          test -n "${{ steps.update-versions-new-scheme-no-patch.outputs.neoforge-version }}"
-          test -n "${{ steps.update-versions-new-scheme-no-patch.outputs.neoform-version }}"
+          test -n "${FABRIC_LOADER_VERSION}"
+          test -n "${FABRIC_API_VERSION}"
+          test -n "${NEOFORGE_VERSION}"
+          test -n "${NEOFORM_VERSION}"
 
   test-mc-server:
     name: Run Minecraft Server (${{ matrix.loader }})
@@ -185,14 +206,19 @@ jobs:
 
       - name: Check setup-mc-server Fabric outputs
         if: matrix.loader == 'fabric'
+        env:
+          FABRIC_LOADER_VERSION: ${{ steps.setup-server.outputs.fabric-loader-version }}
+          FABRIC_INSTALLER_VERSION: ${{ steps.setup-server.outputs.fabric-installer-version }}
         run: |
-          test -n "${{ steps.setup-server.outputs.fabric-loader-version }}"
-          test -n "${{ steps.setup-server.outputs.fabric-installer-version }}"
+          test -n "${FABRIC_LOADER_VERSION}"
+          test -n "${FABRIC_INSTALLER_VERSION}"
 
       - name: Check setup-mc-server NeoForge outputs
         if: matrix.loader == 'neoforge'
+        env:
+          NEOFORGE_VERSION: ${{ steps.setup-server.outputs.neoforge-version }}
         run: |
-          test -n "${{ steps.setup-server.outputs.neoforge-version }}"
+          test -n "${NEOFORGE_VERSION}"
 
       - name: Run Minecraft server
         id: run-server
@@ -202,8 +228,10 @@ jobs:
           timeout-seconds: "120"
 
       - name: Check run-mc-server outputs and reachability
+        env:
+          PID: ${{ steps.run-server.outputs.pid }}
         run: |
-          test -n "${{ steps.run-server.outputs.pid }}"
+          test -n "${PID}"
           timeout 5 bash -c '</dev/tcp/127.0.0.1/${{ matrix.port }}' && echo "Server port is open"
 
   test-mc-client:
@@ -275,13 +303,17 @@ jobs:
 
       - name: Check setup-mc-client Fabric outputs
         if: matrix.loader == 'fabric'
+        env:
+          FABRIC_LOADER_VERSION: ${{ steps.setup-client.outputs.fabric-loader-version }}
         run: |
-          test -n "${{ steps.setup-client.outputs.fabric-loader-version }}"
+          test -n "${FABRIC_LOADER_VERSION}"
 
       - name: Check setup-mc-client NeoForge outputs
         if: matrix.loader == 'neoforge'
+        env:
+          NEOFORGE_VERSION: ${{ steps.setup-client.outputs.neoforge-version }}
         run: |
-          test -n "${{ steps.setup-client.outputs.neoforge-version }}"
+          test -n "${NEOFORGE_VERSION}"
 
       - name: Run Minecraft client (join server)
         id: run-client
@@ -292,10 +324,14 @@ jobs:
           timeout-seconds: "180"
 
       - name: Check run-mc-client outputs
+        env:
+          PID: ${{ steps.run-client.outputs.pid }}
+          DISPLAY: ${{ steps.run-client.outputs.display }}
+          XAUTHORITY: ${{ steps.run-client.outputs.xauthority }}
         run: |
-          test -n "${{ steps.run-client.outputs.pid }}"
-          test -n "${{ steps.run-client.outputs.display }}"
-          test -n "${{ steps.run-client.outputs.xauthority }}"
+          test -n "${PID}"
+          test -n "${DISPLAY}"
+          test -n "${XAUTHORITY}"
 
       - name: Screenshot Minecraft client
         id: screenshot
@@ -307,8 +343,10 @@ jobs:
           add-job-summary: "true"
 
       - name: Check screenshot-mc-client outputs
+        env:
+          ARTIFACT_ID: ${{ steps.screenshot.outputs.artifact-id }}
         run: |
-          test -n "${{ steps.screenshot.outputs.artifact-id }}"
+          test -n "${ARTIFACT_ID}"
 
   test-setup-packwiz:
     name: Setup Packwiz
@@ -333,8 +371,10 @@ jobs:
         uses: ./setup-packwiz
 
       - name: Check setup-packwiz output and binary
+        env:
+          PACKWIZ_PATH: ${{ steps.setup-packwiz.outputs.packwiz-path }}
         run: |
-          test -n "${{ steps.setup-packwiz.outputs.packwiz-path }}"
+          test -n "${PACKWIZ_PATH}"
           packwiz --help
 
       - name: Set up Packwiz again (exercise tool-cache/repeat-install path)
@@ -342,8 +382,10 @@ jobs:
         uses: ./setup-packwiz
 
       - name: Check setup-packwiz output and binary (second run)
+        env:
+          PACKWIZ_PATH: ${{ steps.setup-packwiz-again.outputs.packwiz-path }}
         run: |
-          test -n "${{ steps.setup-packwiz-again.outputs.packwiz-path }}"
+          test -n "${PACKWIZ_PATH}"
           packwiz --help
 
   test-unpack-mrpack:
@@ -373,9 +415,12 @@ jobs:
           environment: ${{ matrix.environment }}
 
       - name: Check outputs and unpacked files
+        env:
+          MINECRAFT_DIRECTORY: ${{ steps.unpack.outputs.minecraft-directory }}
+          MINECRAFT_VERSION: ${{ steps.unpack.outputs.minecraft-version }}
         run: |
-          test "${{ steps.unpack.outputs.minecraft-directory }}" = "mc-instance-${{ matrix.environment }}"
-          test "${{ steps.unpack.outputs.minecraft-version }}" = "1.21.4"
+          test "${MINECRAFT_DIRECTORY}" = "mc-instance-${{ matrix.environment }}"
+          test "${MINECRAFT_VERSION}" = "1.21.4"
           test -f "mc-instance-${{ matrix.environment }}/mods/shared-mod.txt"
           test -f "mc-instance-${{ matrix.environment }}/config/base.txt"
           test -f "mc-instance-${{ matrix.environment }}/config/${{ matrix.environment }}-only.txt"
@@ -429,10 +474,14 @@ jobs:
           working-directory: scratch-pack
 
       - name: Check packwiz-update-pack outputs
+        env:
+          HAS_UPDATE: ${{ steps.update-pack.outputs.has-update }}
+          UPDATED_MODS: ${{ steps.update-pack.outputs.updated-mods }}
+          LOADER_UPDATE: ${{ steps.update-pack.outputs.loader-update }}
         run: |
-          test "${{ steps.update-pack.outputs.has-update }}" = "true"
-          echo '${{ steps.update-pack.outputs.updated-mods }}' | jq -e 'length > 0'
-          echo '${{ steps.update-pack.outputs.loader-update }}' | jq -e '.name == "Fabric"'
+          test "${HAS_UPDATE}" = "true"
+          echo '${UPDATED_MODS}' | jq -e 'length > 0'
+          echo '${LOADER_UPDATE}' | jq -e '.name == "Fabric"'
 
       - name: Run check-fabric-conflicts
         id: check-conflicts
@@ -443,12 +492,15 @@ jobs:
           loader: fabric
 
       - name: Check check-fabric-conflicts outputs are well-formed
+        env:
+          HAS_CONFLICTS: ${{ steps.check-conflicts.outputs.has-conflicts }}
+          CONFLICTS: ${{ steps.check-conflicts.outputs.conflicts }}
         run: |
           # Whether a real conflict exists depends on live Modrinth state, so only the
           # shape is asserted here - the pure conflict-resolution logic itself is covered
           # by fixture-based unit tests.
-          echo '${{ steps.check-conflicts.outputs.has-conflicts }}' | grep -Eq '^(true|false)$'
-          echo '${{ steps.check-conflicts.outputs.conflicts }}' | jq -e 'type == "array"'
+          echo '${HAS_CONFLICTS}' | grep -Eq '^(true|false)$'
+          echo '${CONFLICTS}' | jq -e 'type == "array"'
 
       - name: Run packwiz-install-versions to pin Sodium back to the known-old version
         uses: ./packwiz-install-versions

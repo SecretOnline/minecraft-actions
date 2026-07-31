@@ -1,14 +1,14 @@
 name: Sync GitHub Actions versions
 
 on:
-  pull_request_target:
+  pull_request:
     types: [opened, synchronize]
 
 jobs:
   sync-docs:
     name: Update READMEs
     if: >-
-      github.actor == 'dependabot[bot]' &&
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
       startsWith(github.event.pull_request.head.ref, 'dependabot/github_actions/')
     runs-on: ubuntu-latest
     permissions:
@@ -18,10 +18,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.ref }}
+          persist-credentials: false
 
       - name: Fetch base branch
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
-          git fetch origin "${{ github.event.pull_request.base.ref }}:refs/remotes/origin/${{ github.event.pull_request.base.ref }}" --depth=1
+          git fetch origin "${BASE_REF}:refs/remotes/origin/${BASE_REF}" --depth=1
 
       - name: Find version bumps and sync README examples
         env:
@@ -98,6 +101,8 @@ jobs:
           done < "$bumps_file"
 
       - name: Commit and Push
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -106,5 +111,5 @@ jobs:
             echo "No README changes needed."
           else
             git commit -m "[Auto] Sync action version references in READMEs"
-            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+            git push origin HEAD:${HEAD_REF}
           fi

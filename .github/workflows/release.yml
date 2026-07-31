@@ -28,6 +28,8 @@ jobs:
           egress-policy: audit
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -108,11 +110,13 @@ jobs:
 
       - name: Tag and push
         if: ${{ !inputs.dry-run }}
+        env:
+          STEPS_RELEASE_COMMIT_OUTPUTS_SHA: ${{ steps.release-commit.outputs.sha }}
         run: |
           full="v$VERSION"
           minor="v$(echo "$VERSION" | cut -d. -f1-2)"
           major="v$(echo "$VERSION" | cut -d. -f1)"
-          sha="${{ steps.release-commit.outputs.sha }}"
+          sha="${STEPS_RELEASE_COMMIT_OUTPUTS_SHA}"
 
           git tag -fa "$full"  "$sha" -m "Release $full"
           git tag -fa "$minor" "$sha" -m "Release $minor"
