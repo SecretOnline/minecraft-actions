@@ -12,7 +12,7 @@ When `loader` is `neoforge`, this runs the real NeoForge installer with `java`, 
 
 ```yaml
 steps:
-  - uses: actions/setup-java@v5
+  - uses: actions/setup-java@v5.7.0
     with:
       distribution: temurin
       java-version: "25"

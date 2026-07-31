@@ -15,7 +15,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout PR branch
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.ref }}
 
@@ -42,6 +42,10 @@ jobs:
 
           extract_uses() {
             # $1: git ref ("BASE" for the base commit, or empty for the working tree)
+            # Emits key<TAB>version pairs. When a "uses:" line is SHA-pinned with a
+            # trailing "# vX.Y.Z" comment (see actions-up/dependabot), the comment is
+            # synced to READMEs instead of the raw SHA, since READMEs show usage
+            # examples with readable tags, not the SHA pins CI uses internally.
             local ref="$1" file
             for file in "${changed_files[@]}"; do
               if [ "$ref" = "BASE" ]; then
@@ -49,14 +53,26 @@ jobs:
               else
                 cat "$file" 2>/dev/null || true
               fi
-            done | grep -oE 'uses:[[:space:]]*[A-Za-z0-9._-]+/[A-Za-z0-9._/-]+@[A-Za-z0-9._-]+' \
-                 | sed -E 's/uses:[[:space:]]*//'
+            done | grep -oE 'uses:[[:space:]]*[A-Za-z0-9._-]+/[A-Za-z0-9._/-]+@[A-Za-z0-9._-]+([[:space:]]*#[[:space:]]*[A-Za-z0-9._-]+)?' \
+                 | sed -E 's/uses:[[:space:]]*//' \
+                 | awk -F'#' '{
+                     ref_part = $1
+                     gsub(/[[:space:]]+$/, "", ref_part)
+                     split(ref_part, kv, "@")
+                     key = kv[1]
+                     version = kv[2]
+                     if (NF > 1) {
+                       version = $2
+                       gsub(/^[[:space:]]+|[[:space:]]+$/, "", version)
+                     }
+                     print key"\t"version
+                   }'
           }
 
           # key<TAB>version pairs, deduplicated (last occurrence per key wins, they
           # should all agree within a single ref anyway).
-          extract_uses BASE | awk -F'@' '{ print $1"\t"$2 }' | sort -u > /tmp/base-uses.tsv
-          extract_uses HEAD | awk -F'@' '{ print $1"\t"$2 }' | sort -u > /tmp/head-uses.tsv
+          extract_uses BASE | sort -u > /tmp/base-uses.tsv
+          extract_uses HEAD | sort -u > /tmp/head-uses.tsv
 
           bumps_file=/tmp/bumps.tsv
           : > "$bumps_file"
