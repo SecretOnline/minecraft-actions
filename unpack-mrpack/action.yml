@@ -1,0 +1,32 @@
+name: Unpack mrpack
+description: >-
+  Unpacks a Modrinth modpack (.mrpack) into a Minecraft instance directory: downloads
+  the files listed in modrinth.index.json (verifying size and SHA-1), skipping any not
+  supported for the given environment, then applies the overrides/ directory followed
+  by client-overrides/ or server-overrides/.
+
+inputs:
+  mrpack-file:
+    description: Path to the .mrpack file to unpack.
+    required: true
+  minecraft-directory:
+    description: Directory to unpack the pack into.
+    required: true
+  environment:
+    description: Environment to unpack for. (client or server)
+    default: client
+  download-concurrency:
+    description: Number of pack files to download in parallel.
+    default: "8"
+
+outputs:
+  minecraft-directory:
+    description: The minecraft-directory input, echoed back.
+  minecraft-version:
+    description: Minecraft version required by the pack, from modrinth.index.json's dependencies.
+  dependencies:
+    description: JSON object of the pack's dependencies (e.g. minecraft, fabric-loader, neoforge versions).
+
+runs:
+  using: node24
+  main: dist/index.js

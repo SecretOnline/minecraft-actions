@@ -1,0 +1,35 @@
+name: Screenshot Minecraft client
+description: >-
+  Takes a screenshot of a running Minecraft client (started by run-mc-client) via
+  ImageMagick's `import`, and uploads it as a workflow artifact. The runner must already
+  have ImageMagick installed (e.g. `apt-get install -y imagemagick`) before this action
+  runs - it does not install system packages on your behalf.
+
+inputs:
+  display:
+    description: >-
+      X display to screenshot (e.g. ":99"), as output by run-mc-client's display output.
+    required: true
+  xauthority:
+    description: >-
+      Path to the Xauthority cookie file for the display, as output by run-mc-client's
+      xauthority output.
+    required: true
+  artifact-name:
+    description: >-
+      Name to give the uploaded artifact. Also used as the screenshot's filename (with a
+      .png extension appended), since the artifact name parameter is ignored when
+      uploading a single unarchived file.
+    required: true
+  add-job-summary:
+    description: If "true", adds the screenshot to the job summary.
+    required: false
+    default: "false"
+
+outputs:
+  artifact-id:
+    description: ID of the uploaded artifact.
+
+runs:
+  using: node24
+  main: dist/index.js

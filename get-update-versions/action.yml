@@ -1,0 +1,31 @@
+name: Get update versions
+description: Fetches the latest versions of Minecraft toolchain components for a given Minecraft version.
+
+inputs:
+  minecraft-version:
+    description: Minecraft version to update to. If not supplied, falls back to latest release.
+    required: false
+  gradle-properties:
+    description: Path to the gradle.properties file.
+    required: false
+    default: gradle.properties
+
+outputs:
+  minecraft-version:
+    description: The resolved Minecraft version
+  java-version:
+    description: Java major version required for this Minecraft version
+  numeric-version:
+    description: Numeric part of the Minecraft version (without snapshot/pre/rc suffix)
+  fabric-loader-version:
+    description: Latest stable Fabric Loader version
+  fabric-api-version:
+    description: Latest Fabric API version for this Minecraft version
+  neoforge-version:
+    description: Latest NeoForge version for this Minecraft version
+  neoform-version:
+    description: Latest NeoForm version for this Minecraft version
+
+runs:
+  using: node24
+  main: dist/index.js
