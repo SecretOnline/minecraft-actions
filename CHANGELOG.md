@@ -16,6 +16,13 @@ The versioning scheme is listed in the README.
 
 ## Unreleased - DATE
 
+## v2.2.0 - 2026-09-19
+
+### Added
+
+- `get-latest-mod-version` action:
+  - Looks up the latest Modrinth version of a mod for a given Minecraft version, with an option to allow pre-release versions.
+
 ## v2.1.1 - 2026-07-11
 
 ### Added

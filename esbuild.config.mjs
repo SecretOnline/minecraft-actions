@@ -25,6 +25,10 @@ const entryPoints = [
     in: "src/packwiz-install-versions/index.ts",
     out: "packwiz-install-versions/dist/index.js",
   },
+  {
+    in: "src/get-latest-mod-version/index.ts",
+    out: "get-latest-mod-version/dist/index.js",
+  },
 ];
 
 for (const { in: inFile, out: outFile } of entryPoints) {

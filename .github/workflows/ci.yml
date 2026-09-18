@@ -54,6 +54,7 @@ jobs:
             packwiz-update-pack/dist
             check-fabric-conflicts/dist
             packwiz-install-versions/dist
+            get-latest-mod-version/dist
 
   test-version-actions:
     name: Version Actions
@@ -108,6 +109,37 @@ jobs:
           TEST_MATRIX: ${{ steps.test-matrix-new-scheme-no-patch.outputs.test-matrix }}
         run: |
           echo "${TEST_MATRIX}" | jq -e 'length > 0'
+
+      - name: Run get-latest-mod-version against Sodium (release only)
+        id: latest-mod-version
+        uses: ./get-latest-mod-version
+        with:
+          minecraft-version: "1.21.1"
+          mod-id: AANobbMI
+
+      - name: Check get-latest-mod-version outputs (release only)
+        env:
+          MOD_VERSION: ${{ steps.latest-mod-version.outputs.mod-version }}
+          RELEASE_TYPE: ${{ steps.latest-mod-version.outputs.release-type }}
+        run: |
+          test -n "${MOD_VERSION}"
+          test "${RELEASE_TYPE}" = "release"
+
+      - name: Run get-latest-mod-version against Sodium (pre-releases allowed)
+        id: latest-mod-version-pre-release
+        uses: ./get-latest-mod-version
+        with:
+          minecraft-version: "1.21.1"
+          mod-id: AANobbMI
+          allow-pre-release: "true"
+
+      - name: Check get-latest-mod-version outputs (pre-releases allowed)
+        env:
+          MOD_VERSION: ${{ steps.latest-mod-version-pre-release.outputs.mod-version }}
+          RELEASE_TYPE: ${{ steps.latest-mod-version-pre-release.outputs.release-type }}
+        run: |
+          test -n "${MOD_VERSION}"
+          echo "${RELEASE_TYPE}" | grep -Eq '^(release|beta|alpha)$'
 
       - name: Run get-update-versions against fixture (1.x scheme)
         id: update-versions

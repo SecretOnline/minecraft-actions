@@ -6,10 +6,13 @@ export interface ModrinthVersionFile {
   primary: boolean;
 }
 
+export type ModrinthVersionType = "release" | "beta" | "alpha";
+
 export interface ModrinthVersion {
   id: string;
   projectId: string;
   versionNumber: string;
+  versionType: ModrinthVersionType;
   datePublished: string;
   gameVersions: string[];
   loaders: string[];
@@ -20,6 +23,7 @@ interface ModrinthVersionApiShape {
   id: string;
   project_id: string;
   version_number: string;
+  version_type: ModrinthVersionType;
   date_published: string;
   game_versions: string[];
   loaders: string[];
@@ -31,6 +35,7 @@ export function mapModrinthVersion(raw: ModrinthVersionApiShape): ModrinthVersio
     id: raw.id,
     projectId: raw.project_id,
     versionNumber: raw.version_number,
+    versionType: raw.version_type,
     datePublished: raw.date_published,
     gameVersions: raw.game_versions,
     loaders: raw.loaders,
