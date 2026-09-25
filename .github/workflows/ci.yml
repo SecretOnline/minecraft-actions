@@ -320,7 +320,7 @@ jobs:
           java-version: ${{ steps.mc-versions.outputs.java-version }}
 
       - name: Install Xvfb, Mesa software renderer, and ImageMagick
-        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri mesa-utils imagemagick
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri mesa-utils imagemagick mesa-vulkan-drivers
 
       - name: Set up Minecraft server
         id: setup-server
