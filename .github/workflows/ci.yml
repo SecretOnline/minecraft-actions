@@ -196,7 +196,7 @@ jobs:
           test -n "${NEOFORM_VERSION}"
 
   test-mc-server:
-    name: Run Minecraft Server (${{ matrix.loader }})
+    name: Run Minecraft Server (${{ matrix.loader }} ${{ matrix.version || 'latest' }})
     needs: build
     runs-on: ubuntu-latest
     strategy:
@@ -204,12 +204,27 @@ jobs:
       matrix:
         include:
           - loader: vanilla
+            version: ""
+            port: 25565
+            rconPort: 25575
+          - loader: vanilla
+            version: "1.21.1"
             port: 25565
             rconPort: 25575
           - loader: fabric
+            version: ""
+            port: 25566
+            rconPort: 25576
+          - loader: fabric
+            version: "1.21.1"
             port: 25566
             rconPort: 25576
           - loader: neoforge
+            version: ""
+            port: 25567
+            rconPort: 25577
+          - loader: neoforge
+            version: "1.21.1"
             port: 25567
             rconPort: 25577
     steps:
@@ -229,6 +244,8 @@ jobs:
       - name: Resolve latest Minecraft version for server smoke test
         id: mc-versions
         uses: ./get-update-versions
+        with:
+          minecraft-version: ${{ matrix.version }}
 
       - name: Set up JDK for Minecraft server
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
@@ -279,7 +296,7 @@ jobs:
           timeout 5 bash -c '</dev/tcp/127.0.0.1/${{ matrix.port }}' && echo "Server port is open"
 
   test-mc-client:
-    name: Run Minecraft Client (${{ matrix.loader }})
+    name: Run Minecraft Client (${{ matrix.loader }} ${{ matrix.version || 'latest' }})
     needs: build
     runs-on: ubuntu-latest
     strategy:
@@ -287,12 +304,27 @@ jobs:
       matrix:
         include:
           - loader: vanilla
+            version: ""
+            port: 25568
+            rconPort: 25578
+          - loader: vanilla
+            version: "1.21.1"
             port: 25568
             rconPort: 25578
           - loader: fabric
+            version: ""
+            port: 25569
+            rconPort: 25579
+          - loader: fabric
+            version: "1.21.1"
             port: 25569
             rconPort: 25579
           - loader: neoforge
+            version: ""
+            port: 25570
+            rconPort: 25580
+          - loader: neoforge
+            version: "1.21.1"
             port: 25570
             rconPort: 25580
     steps:
@@ -312,6 +344,8 @@ jobs:
       - name: Resolve latest Minecraft version for client smoke test
         id: mc-versions
         uses: ./get-update-versions
+        with:
+          minecraft-version: ${{ matrix.version }}
 
       - name: Set up JDK
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1

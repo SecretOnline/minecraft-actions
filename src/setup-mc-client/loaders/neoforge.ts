@@ -6,6 +6,20 @@ import type { MojangArgumentEntry, MojangLibrary } from "../../lib/mojang/mojang
 import { fetchNeoForgeVersions, findLatestNeoForgeVersion, runNeoForgeInstaller } from "../../lib/loaders/neoforge.js";
 import { type ClientLoaderContext, type LoaderResult, libraryToDownload } from "./types.js";
 
+// NeoForge's profile puts its bootstrap libraries (bootstraplauncher, securejarhandler,
+// the ASM jars, JarJarFileSystems) on the JVM module path via a "-p"/"--module-path"
+// argument, in addition to listing them in the ordinary `libraries` array.
+function modulePathLibraryPaths(jvmArgs: MojangArgumentEntry[]): Set<string> {
+  const flagIndex = jvmArgs.findIndex((arg) => arg === "-p" || arg === "--module-path");
+  const value = flagIndex === -1 ? undefined : jvmArgs[flagIndex + 1];
+  if (typeof value !== "string") {
+    return new Set();
+  }
+  return new Set(
+    value.split("${classpath_separator}").map((entry) => entry.replace("${library_directory}/", "")),
+  );
+}
+
 export async function setupNeoForge(ctx: ClientLoaderContext): Promise<LoaderResult> {
   const inputNeoForgeVersion = core.getInput("neoforge-version");
   const numericVersion = ctx.mcVersion.replace(/-(snapshot|pre|rc).*$/, "");
@@ -86,11 +100,28 @@ export async function setupNeoForge(ctx: ClientLoaderContext): Promise<LoaderRes
   rmSync(join(ctx.clientDirectory, "versions"), { recursive: true, force: true });
   rmSync(join(ctx.clientDirectory, "launcher_profiles.json"), { force: true });
 
+  const libraryDownloads = filterLibrariesForLinux(profile.libraries).map(libraryToDownload);
+  const modulePathPaths = modulePathLibraryPaths(profile.arguments.jvm);
+
   return {
     mainClass: profile.mainClass,
     extraJvmArgs: profile.arguments.jvm,
     extraGameArgs: profile.arguments.game,
-    libraryDownloads: filterLibrariesForLinux(profile.libraries).map(libraryToDownload),
+    // These still need to be downloaded onto disk, just left out of classpathEntries below.
+    libraryDownloads,
+    classpathExcludePaths: [
+      // Same reasoning as the universal/patched jars above: GameLocator resolves the
+      // actual game classes itself from libraryDirectory, it never reads them from this
+      // raw client.jar. Leaving it on the classpath anyway is at best redundant - on
+      // legacy (1.x) Minecraft versions it's actively harmful, since the jar has no
+      // module-info and so becomes an automatic module named "client", which ends up
+      // exporting the same packages (e.g. net.minecraft.obfuscate) as FML's own merged
+      // "minecraft" module, causing a module resolution conflict at launch.
+      "client.jar",
+      ...libraryDownloads
+        .map((library) => library.relativePath)
+        .filter((relativePath) => modulePathPaths.has(relativePath.slice("libraries/".length))),
+    ],
     cacheKeySuffix: `-neoforge-${neoforgeVersion}`,
   };
 }

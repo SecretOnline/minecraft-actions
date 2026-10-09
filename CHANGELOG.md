@@ -16,6 +16,10 @@ The versioning scheme is listed in the README.
 
 ## Unreleased - DATE
 
+### Fixed
+
+- NeoForge libraries are only included once in older versions in the `setup-mc-client` action.
+
 ## v2.2.0 - 2026-09-19
 
 ### Added

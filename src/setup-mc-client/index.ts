@@ -71,6 +71,7 @@ async function run(): Promise<void> {
     jvmArgTemplate: [],
     gameArgTemplate: [],
     libraryDownloads: [],
+    classpathExcludePaths: [],
     cacheKey: `mc-client-libraries-${mcVersion}`,
   };
   state = applyLoaderResult(state, await setupVanillaClient(loaderContext));
@@ -87,13 +88,17 @@ async function run(): Promise<void> {
   }
 
   core.startGroup("Downloading libraries");
-  const classpathEntries = await downloadLibraries(
+  const downloadedClasspathEntries = await downloadLibraries(
     clientDirectory,
     userAgent,
     state.libraryDownloads,
     state.cacheKey,
     concurrency,
   );
+  // Loaders can mark specific downloaded libraries (e.g. NeoForge's module-path bootstrap
+  // jars) as present on disk for the JVM to find directly, but not meant for "-cp".
+  const classpathExcludeSet = new Set(state.classpathExcludePaths);
+  const classpathEntries = downloadedClasspathEntries.filter((entry) => !classpathExcludeSet.has(entry));
   core.endGroup();
 
   let logConfigPath: string | undefined;
