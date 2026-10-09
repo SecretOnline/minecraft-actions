@@ -1,0 +1,27 @@
+name: Get latest mod version
+description: >-
+  Looks up the latest Modrinth version of a mod for a given Minecraft version.
+  By default only stable "release" versions are considered; set allow-pre-release
+  to also consider "beta" and "alpha" versions.
+
+inputs:
+  minecraft-version:
+    description: Minecraft version to find a matching mod version for.
+    required: true
+  mod-id:
+    description: Modrinth project ID or slug of the mod.
+    required: true
+  allow-pre-release:
+    description: Whether to allow pre-release (beta or alpha) mod versions.
+    required: false
+    default: "false"
+
+outputs:
+  mod-version:
+    description: The version number of the latest matching mod version.
+  release-type:
+    description: The release type of the latest matching mod version ("release", "beta", or "alpha").
+
+runs:
+  using: node24
+  main: dist/index.js

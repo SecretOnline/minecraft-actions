@@ -1,0 +1,24 @@
+name: Packwiz update pack
+description: >-
+  Runs `packwiz update --all --yes` and `packwiz migrate loader latest --yes` in a pack
+  directory, reporting exactly what changed as structured data. Emits no markdown -
+  changelog/PR-body rendering is the caller's responsibility.
+
+inputs:
+  working-directory:
+    description: Pack directory to run packwiz in.
+    default: "."
+
+outputs:
+  has-update:
+    description: Whether any mod or the loader was updated.
+  updated-mods:
+    description: >-
+      JSON array of { name, oldFile, newFile } for each updated mod. oldFile/newFile are
+      the jar filenames packwiz reports, not clean version numbers.
+  loader-update:
+    description: JSON { name, version } if the loader was updated, otherwise an empty string.
+
+runs:
+  using: node24
+  main: dist/index.js

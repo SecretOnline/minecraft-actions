@@ -1,0 +1,19 @@
+name: Packwiz install versions
+description: >-
+  Pins a set of mods to specific Modrinth versions via the packwiz CLI. A mechanical,
+  reusable applier - it does no version selection of its own, taking exactly what
+  it's told to install.
+
+inputs:
+  working-directory:
+    description: Pack directory to run packwiz in.
+    default: "."
+  versions:
+    description: >-
+      JSON array of { platform: "modrinth", mod, version } triples, where "mod" is a
+      Modrinth project ID and "version" is a Modrinth version ID.
+    required: true
+
+runs:
+  using: node24
+  main: dist/index.js

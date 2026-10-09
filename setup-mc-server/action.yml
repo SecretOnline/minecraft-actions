@@ -1,0 +1,60 @@
+name: Setup Minecraft server
+description: >-
+  Downloads a Minecraft server (vanilla, Fabric, or NeoForge) and writes eula.txt and
+  server.properties, ready to be started by the run-mc-server action. When loader is
+  "neoforge", this runs the NeoForge installer with `java`, so a JDK must already be on
+  PATH (e.g. via actions/setup-java) before this action runs.
+
+inputs:
+  minecraft-version:
+    description: Minecraft version to run. If not supplied, falls back to latest release.
+    required: false
+  loader:
+    description: Server type to install. One of "vanilla", "fabric", or "neoforge".
+    required: false
+    default: vanilla
+  fabric-loader-version:
+    description: >-
+      Fabric Loader version to use when loader is "fabric". If not supplied, falls back
+      to the latest stable version.
+    required: false
+  fabric-installer-version:
+    description: >-
+      Fabric Installer version to use when loader is "fabric". If not supplied, falls
+      back to the latest stable version.
+    required: false
+  neoforge-version:
+    description: >-
+      NeoForge version to use when loader is "neoforge". If not supplied, falls back to
+      the latest stable version for the resolved Minecraft version.
+    required: false
+  server-directory:
+    description: Directory to install the server into.
+    required: false
+    default: "."
+  accept-eula:
+    description: >-
+      Must be set to "true" to acknowledge the Minecraft EULA (https://aka.ms/MinecraftEULA)
+      on the user's behalf.
+    required: true
+  server-properties:
+    description: >-
+      Extra server.properties lines ("key=value", one per line) to apply on top of
+      the CI-friendly defaults (online-mode=false, white-list=false, enable-rcon=true).
+    required: false
+
+outputs:
+  server-directory:
+    description: Directory the server was installed into
+  minecraft-version:
+    description: The resolved Minecraft version
+  fabric-loader-version:
+    description: The resolved Fabric Loader version (only set when loader is "fabric")
+  fabric-installer-version:
+    description: The resolved Fabric Installer version (only set when loader is "fabric")
+  neoforge-version:
+    description: The resolved NeoForge version (only set when loader is "neoforge")
+
+runs:
+  using: node24
+  main: dist/index.js
